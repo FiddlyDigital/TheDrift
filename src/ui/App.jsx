@@ -315,6 +315,18 @@ export default function App() {
     return () => clearInterval(id);
   }, [sessionEnd]);
 
+  const cancelJourney = useCallback((opts) => {
+    opts = opts || {};
+    if (!journeyEndRef.current) return;
+    journeyEndRef.current = 0;
+    journeyStepRef.current = -1;
+    journeyFadingRef.current = false;
+    if (opts.silent !== true) ENGINE.cancelFade();
+    setJourney(null);
+    setJourneyRemain(0);
+    setJourneyStop(0);
+  }, []);
+
   // journey engine
   useEffect(() => {
     if (!journey) return;
@@ -579,18 +591,6 @@ export default function App() {
     nextBellRef.current = 0;
     setSessionEnd(0);
     setSessionRemain(0);
-  }, []);
-
-  const cancelJourney = useCallback((opts) => {
-    opts = opts || {};
-    if (!journeyEndRef.current) return;
-    journeyEndRef.current = 0;
-    journeyStepRef.current = -1;
-    journeyFadingRef.current = false;
-    if (opts.silent !== true) ENGINE.cancelFade();
-    setJourney(null);
-    setJourneyRemain(0);
-    setJourneyStop(0);
   }, []);
 
   const beginJourney = useCallback((j) => {
