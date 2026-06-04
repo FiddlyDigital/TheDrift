@@ -1,5 +1,5 @@
 import { KEYS, STR_KEYS, INT_KEYS, NUM_DEFAULTS } from './constants.js';
-import { AmbientEngine } from '../engine/index.js';
+import { MOODS, ENSEMBLES } from '../engine/constants.js';
 
 // ---- persistence -----------------------------------------------------
 export function readConfig() {
@@ -43,8 +43,8 @@ export function writeLibrary(list) {
   try { localStorage.setItem(LIB_KEY, JSON.stringify(list)); } catch (e) {}
 }
 export function snapshotName(p) {
-  const mood = AmbientEngine.MOODS[p.mood] ? AmbientEngine.MOODS[p.mood].name : "Drift";
-  const ens = AmbientEngine.ENSEMBLES[p.ensemble] ? AmbientEngine.ENSEMBLES[p.ensemble].name : "";
+  const mood = MOODS[p.mood] ? MOODS[p.mood].name : "Drift";
+  const ens = ENSEMBLES[p.ensemble] ? ENSEMBLES[p.ensemble].name : "";
   return ens ? mood + " · " + ens : mood;
 }
 export function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
