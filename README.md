@@ -1,5 +1,7 @@
 # The Drift
 
+**Live site: [fiddlydigital.github.io/TheDrift](https://fiddlydigital.github.io/TheDrift/)**
+
 A generative ambient music system inspired by Brian Eno's *Music for Airports*. Multiple loops, each a single synthesized note on its own irrational length, drift endlessly in and out of phase — so the music never repeats.
 
 ---
