@@ -1,25 +1,152 @@
-# CODING AGENTS: READ THIS FIRST
+# The Drift
 
-This is a **handoff bundle** from Claude Design (claude.ai/design).
+A generative ambient music system inspired by Brian Eno's *Music for Airports*. Multiple loops, each a single synthesized note on its own irrational length, drift endlessly in and out of phase — so the music never repeats.
 
-A user mocked up designs in HTML/CSS/JS using an AI design tool, then exported this bundle so a coding agent can implement the designs for real.
+---
 
-## What you should do — IMPORTANT
+## Getting started
 
-**Read the chat transcripts first.** There are 7 chat transcript(s) in `chats/`. The transcripts show the full back-and-forth between the user and the design assistant — they tell you **what the user actually wants** and **where they landed** after iterating. Don't skip them. The final HTML files are the output, but the chat is where the intent lives.
+**Prerequisites:** Node.js 18+
 
-**Read `project/Loops.html` in full.** The user had this file open when they triggered the handoff, so it's almost certainly the primary design they want built. Read it top to bottom — don't skim. Then **follow its imports**: open every file it pulls in (shared components, CSS, scripts) so you understand how the pieces fit together before you start implementing.
+```bash
+# Install dependencies
+npm install
 
-**If anything is ambiguous, ask the user to confirm before you start implementing.** It's much cheaper to clarify scope up front than to build the wrong thing.
+# Start the dev server (hot reload)
+npm run dev
 
-## About the design files
+# Build for production
+npm run build
 
-The design medium is **HTML/CSS/JS** — these are prototypes, not production code. Your job is to **recreate them pixel-perfectly** in whatever technology makes sense for the target codebase (React, Vue, native, whatever fits). Match the visual output; don't copy the prototype's internal structure unless it happens to fit.
+# Preview the production build locally
+npm run preview
+```
 
-**Don't render these files in a browser or take screenshots unless the user asks you to.** Everything you need — dimensions, colors, layout rules — is spelled out in the source. Read the HTML and CSS directly; a screenshot won't tell you anything they don't.
+The dev server runs at `http://localhost:5173` by default.
 
-## Bundle contents
+---
 
-- `README.md` — this file
-- `chats/` — conversation transcripts (read these!)
-- `project/` — the `AmbientMusicGenerator` project files (HTML prototypes, assets, components)
+## Production build
+
+```bash
+npm run build
+```
+
+Output goes to `dist/`. The bundle is:
+
+- **Minified** via Terser (2-pass, console stripped)
+- **Obfuscated** via `javascript-obfuscator` (hex identifiers, string array shuffling)
+- ~496 KB JS / ~131 KB gzip
+
+Deploy the contents of `dist/` to any static host (Netlify, Vercel, GitHub Pages, S3, etc.).
+
+---
+
+## Features
+
+### Sound engine
+- **Synthesized instruments** — all audio generated in the browser via the Web Audio API, no samples required:
+  - Felt Piano, Bells/Glasswork, Marimba, Harp, Handpan, Kalimba, Woodblock, Frame Drum
+  - Strings, Choir, Flute, Drone (sustained/bowed)
+  - Tabla, Balafon, Udu, Singing Bowl (world percussion)
+  - 8-bit Pulse Lead, Blip, Triangle Bass (chiptune)
+- **Ensembles** — curated instrument pools: Felt Piano, Glasswork, Handpan, Percussion, World, 8-Bit, Strings, Choir, Orchestra (random mix)
+- **Generated reverb** — exponentially-decaying noise convolver, length tied to the Space dial
+- **Binaural beats** — Delta / Theta / Alpha / Beta bands, isolated L/R via channel merger (use headphones)
+- **Ambience bed** — synthesized layers: Rain, Vinyl, Wind, Fire, Static, Tape hiss, White / Pink / Brown noise
+
+### Generative system
+- **Unequal loop lengths** — irrational period nudges ensure loops never fall into clean ratios, producing ever-changing phase relationships
+- **Seeded RNG** — every setup is driven by a reproducible seed; share links encode the full state in the URL hash
+- **Autonomous evolve** — voices slowly re-pitch to neighbouring scale tones, nudge their loop length and stereo drift over long listens
+- **Journey mode** — autonomous mood migration, crossfading between harmonic palettes on a configurable time scale
+
+### Moods (harmonic palettes)
+Reflection · Drift · Dusk · Elegy · Suspended · Curious · Pensive · Open · Vast
+
+### Controls
+| Dial | What it does |
+|---|---|
+| Density | Number of simultaneous loops (2–12) |
+| Tempo | Scales every loop length (slow ↔ fast) |
+| Drift | Length spread — how unequal the loops are |
+| Register | Pitch range (deep bass ↔ glassy high) |
+| Space | Reverb tail length |
+| Color | Timbral brightness (felt ↔ bright) |
+| Bloom | FM shimmer — bell-like sidebands that collide at high values |
+| Stutter | Tape-stutter probability per strike |
+| Evolve | Rate of autonomous field mutation |
+| Journey | Autonomous mood migration speed |
+| Glue | Output compression (transparent ↔ pumping) |
+
+### Curated scenes
+One-tap presets that configure the whole instrument: Deep Rest · Stillness · Inner Sun · Tide · Clear Mind · Quickening · Arcade Dusk · Procession · Reverie
+
+### Programmed journeys
+Timed arcs that travel between scenes with smooth crossfades: Into Sleep · Deep Focus · Unwind
+
+### Meditation tools
+- **Session timer** — timed sit with opening/closing singing-bowl bells and configurable interval bells
+- **Sleep timer** — auto-fade to silence after a set duration
+- **Wake / sunrise timer** — starts silent and rises slowly from inaudible to full
+- **Breath guide** — animated ring paced to Coherent (5.5/min), Box (4-4-4-4), or 4-7-8 breathing patterns
+- **Tuning** — A4 reference: 415 Hz (baroque) · 432 Hz (natural) · 440 Hz (concert) · 444 Hz (C=528 Hz) · 448 Hz
+
+### Visualization
+- **Orbital mandala** — full-screen immersive view; each loop is a slowly-rotating hand that blooms on strike, with connecting threads that light up when loops align. Mood-tinted (each palette has its own colour field), audio-reactive (breathes and brightens with the live output)
+- **Panel view** — stacked bar display showing loop lengths, playhead positions, stereo drift plot, and instrument glyphs
+
+### Other
+- **Export to WAV** — renders 1–5 minutes offline at 44.1 kHz stereo (all loops, reverb, ambience, and binaural beats printed)
+- **Personal library** — save and recall favourite configurations
+- **Share link** — encodes the full state (all dials + seed) in the URL hash
+- **PWA** — installable, works offline, lock-screen media controls via Media Session API
+
+---
+
+## Project structure
+
+```
+src/
+  engine/
+    constants.js        # MOODS, INSTRUMENTS, ENSEMBLES, BINAURAL data
+    utils.js            # RNG, midiToFreq, clamp, noteName
+    AmbientEngine.js    # Audio engine class
+    index.js            # Singleton export
+  ui/
+    labels.js           # Dial label functions
+    constants.js        # UI constants (scenes, journeys, textures…)
+    persistence.js      # URL hash + localStorage read/write
+    glyphs.jsx          # Canvas instrument glyphs + DOM legend
+    icons.jsx           # SVG icon components
+    canvas.js           # Canvas renderer factory (mandala + panel)
+    components/
+      Slider.jsx
+      Dial.jsx
+    App.jsx             # Main React component
+  main.jsx              # Entry point + service worker registration
+  styles.css
+
+public/
+  icons/
+  manifest.webmanifest
+  sw.js
+
+project/                # Original design prototype (reference only)
+```
+
+---
+
+## Tech stack
+
+- **React 18** — UI
+- **Web Audio API** — all synthesis and effects (no external audio libs)
+- **Vite 5** — build tooling
+- **Terser** — minification
+- **javascript-obfuscator** — bundle obfuscation
+
+---
+
+## License
+
+MIT
