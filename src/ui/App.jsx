@@ -691,7 +691,7 @@ export default function App() {
           const { AmbientEngine } = require('../engine/index.js');
           const blob = AmbientEngine.bufferToWav(buf);
           const safe = String(sceneLabel || "drift").replace(/[^\w\s-]/g, "").trim() || "drift";
-          const fname = "Loops - " + safe + " (" + minutes + "m).wav";
+          const fname = "The Drift - " + safe + " (" + minutes + "m).wav";
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url; a.download = fname;
@@ -899,7 +899,7 @@ export default function App() {
     try {
       navigator.mediaSession.metadata = new window.MediaMetadata({
         title: activeScene || moodName2,
-        artist: "Loops — generative ambient",
+        artist: "The Drift — generative ambient",
         album: ensName2 + (ensName2 && moodName2 ? " · " : "") + moodName2,
         artwork: makeArtwork(params.mood),
       });
@@ -973,10 +973,10 @@ export default function App() {
       <header className="head">
         <div className="head-left">
           <div className="eyebrow">Generative Ambient System</div>
-          <h1 className="title">Loops<em>.</em></h1>
+          <h1 className="title">The Drift<em>.</em></h1>
           <p className="subtitle">
             Unequal loops, each a single held note, drifting endlessly in and
-            out of phase &mdash; so the music never repeats. After Brian Eno&rsquo;s tape pieces.
+            out of phase &mdash; so the music never repeats.
           </p>
         </div>
         <div className="transport">
@@ -1247,7 +1247,7 @@ export default function App() {
 
       {immersive && (
         <div className={"cast-caption" + (vizUiVisible ? " show" : "")}>
-          <b>Loops</b>
+          <b>The Drift</b>
           <span className="dot">&middot;</span>
           <span>{ensembleName}</span>
           <span className="dot">&middot;</span>
@@ -1307,7 +1307,7 @@ export default function App() {
             <RouteIcon /><span>Journey</span>
           </button>
           <span className="dock-sep" aria-hidden="true"></span>
-          <button className="dock-icon" onClick={() => setSheet((s) => (s === "info" ? null : "info"))} aria-label="About Loops">
+          <button className="dock-icon" onClick={() => setSheet((s) => (s === "info" ? null : "info"))} aria-label="About The Drift">
             <InfoIcon />
           </button>
         </div>
@@ -1479,10 +1479,10 @@ export default function App() {
             {sheet === "info" && (
               <div className="sheet-body">
                 <div className="info-eyebrow">Generative Ambient System</div>
-                <h2 className="info-title">Loops<em>.</em></h2>
+                <h2 className="info-title">The Drift<em>.</em></h2>
                 <p className="info-sub">
                   Unequal loops, each a single held note, drifting endlessly in and out of phase
-                  &mdash; so the music never repeats. After Brian Eno&rsquo;s tape pieces.
+                  &mdash; so the music never repeats.
                 </p>
                 <p className="info-now">Now playing &middot; {ensembleName} &middot; {moodName}{activeScene ? " · " + activeScene : ""}</p>
                 <div className="info-actions">
@@ -1539,7 +1539,7 @@ export default function App() {
           </div>
           <div className="welcome-word">
             <div className="welcome-eyebrow">Generative Ambient System</div>
-            <h1 className="welcome-title">Loops<em>.</em></h1>
+            <h1 className="welcome-title">The Drift<em>.</em></h1>
             <p className="welcome-sub">
               Unequal loops, each a single held note, drifting endlessly in and
               out of phase &mdash; so the music never repeats.

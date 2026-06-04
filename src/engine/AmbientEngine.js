@@ -1,7 +1,7 @@
 import { MOODS, MOOD_ORDER, INSTRUMENTS, ENSEMBLES, ENSEMBLE_ORDER, BINAURAL, BIN_CARRIER } from './constants.js';
 import { mulberry32, midiToFreq, clamp, noteName, hashMood } from './utils.js';
 
-/* Loops — generative ambient engine
+/* The Drift — generative ambient engine
    Felt-piano synthesis + generated reverb + unequal-loop scheduler.
    ES module, converted from the original IIFE. The UI reads engine state
    each animation frame; the engine never touches the DOM. */
