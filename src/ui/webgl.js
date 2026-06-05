@@ -136,6 +136,7 @@ function hex(str) {
 }
 
 const MAX_PARTICLES = 480;
+const TRAIL_LEN = 28;            // history points streaming behind each orb
 const TWO_PI = Math.PI * 2;
 
 export function createWebGLRenderer({ canvas, engine, levRef }) {
@@ -158,9 +159,18 @@ export function createWebGLRenderer({ canvas, engine, levRef }) {
 
   // dynamic point buffer: interleaved [x,y,z, size, r,g,b,a] = 8 floats
   const STRIDE = 8;
-  const pointData = new Float32Array((engine.voices.length + 1 + MAX_PARTICLES) * STRIDE);
+  const maxVoices = 16; // density caps at 12; headroom for safety
+  const pointCap = maxVoices * (1 + TRAIL_LEN) + 1 + MAX_PARTICLES;
+  const pointData = new Float32Array(pointCap * STRIDE);
   const pointBuf = gl.createBuffer();
   const lineBuf = gl.createBuffer();
+
+  // ---- per-voice trail history (ring buffers of recent orb positions) ----
+  const trails = [];   // trails[i] = { pos: Float32Array(TRAIL_LEN*3), head, count }
+  function ensureTrail(i) {
+    if (!trails[i]) trails[i] = { pos: new Float32Array(TRAIL_LEN * 3), head: 0, count: 0 };
+    return trails[i];
+  }
 
   // ---- camera state (drag to rotate) ----
   let yaw = 0.5, pitch = -0.55;       // radians
@@ -276,7 +286,7 @@ export function createWebGLRenderer({ canvas, engine, levRef }) {
 
     const voices = engine.voices;
     const n = voices.length;
-    if (orbits.length !== n) ensureOrbits();
+    if (orbits.length !== n) { ensureOrbits(); trails.length = 0; }
 
     const pal = MOOD_VIZ[engine.params.mood] || MOOD_VIZ.reflection;
     const bgEdge = hex(pal.bg[1] || "#08080c");
@@ -304,9 +314,9 @@ export function createWebGLRenderer({ canvas, engine, levRef }) {
       velPitch *= 0.94;
     }
     const proj = mat4Perspective(Math.PI / 3, w / h, 0.1, 50);
-    const view = mat4ViewRot(yaw, pitch, 4.2);
+    const view = mat4ViewRot(yaw, pitch, 5.6);
 
-    // ---- compute orb world positions, detect strikes ----
+    // ---- compute orb world positions, detect strikes, record trails ----
     const orbPos = [];
     for (let i = 0; i < n; i++) {
       const v = voices[i];
@@ -315,17 +325,18 @@ export function createWebGLRenderer({ canvas, engine, levRef }) {
       orbitPoint(theta, ob.radius, ob.tilt, ob.azimuth, tmp);
       orbPos.push([tmp[0], tmp[1], tmp[2]]);
 
+      // push current position into this voice's trail ring buffer
+      const tr = ensureTrail(i);
+      tr.pos[tr.head * 3] = tmp[0];
+      tr.pos[tr.head * 3 + 1] = tmp[1];
+      tr.pos[tr.head * 3 + 2] = tmp[2];
+      tr.head = (tr.head + 1) % TRAIL_LEN;
+      if (tr.count < TRAIL_LEN) tr.count++;
+
       // strike detection -> burst
       if (v.viz.strike && v.viz.strike !== ob.lastStrike) {
         ob.lastStrike = v.viz.strike;
-        // pitch-tinted color: blend mood accent with ink by register
-        const reg = Math.max(0, Math.min(1, (v.midi - 40) / 44));
-        const col = [
-          accCol[0] * (1 - reg) + inkCol[0] * reg,
-          accCol[1] * (1 - reg) + inkCol[1] * reg,
-          accCol[2] * (1 - reg) + inkCol[2] * reg,
-        ];
-        emitBurst(tmp[0], tmp[1], tmp[2], col, 10);
+        emitBurst(tmp[0], tmp[1], tmp[2], voiceColor(v), 10);
       }
     }
 
@@ -367,6 +378,38 @@ export function createWebGLRenderer({ canvas, engine, levRef }) {
     const starSize = (260 + lev * 520) * dim.dpr;
     pushPoint(0, 0, 0, starSize, accCol[0], accCol[1], accCol[2], 0.5 + lev * 0.45);
 
+    // per-voice pitch-tinted color: blend mood accent (low) with ink (high)
+    function voiceColor(v) {
+      const reg = Math.max(0, Math.min(1, (v.midi - 40) / 44));
+      return [
+        accCol[0] * (1 - reg) + inkCol[0] * reg,
+        accCol[1] * (1 - reg) + inkCol[1] * reg,
+        accCol[2] * (1 - reg) + inkCol[2] * reg,
+      ];
+    }
+
+    // trails — a comet stream behind each orb, fading toward the tail.
+    // longer reverb (space) lengthens the visible trail.
+    const trailFrac = 0.45 + (engine.params.space || 0) * 0.55;
+    for (let i = 0; i < n; i++) {
+      const tr = trails[i];
+      if (!tr || tr.count < 2) continue;
+      const col = voiceColor(voices[i]);
+      const shown = Math.max(2, Math.floor(tr.count * trailFrac));
+      for (let k = 1; k < shown; k++) {
+        // walk backward from the most recent sample
+        const idx = ((tr.head - 1 - k) % TRAIL_LEN + TRAIL_LEN) % TRAIL_LEN;
+        const age = k / shown;                 // 0 (near orb) .. 1 (tail)
+        const fade = (1 - age) * (1 - age);    // quadratic falloff
+        pushPoint(
+          tr.pos[idx * 3], tr.pos[idx * 3 + 1], tr.pos[idx * 3 + 2],
+          (10 + fade * 70) * dim.dpr,
+          col[0], col[1], col[2],
+          fade * 0.5
+        );
+      }
+    }
+
     // orbs
     const FAMILY_SIZE = {
       strings: 1.5, choir: 1.6, flute: 1.35, drone: 1.7,
@@ -375,11 +418,7 @@ export function createWebGLRenderer({ canvas, engine, levRef }) {
     for (let i = 0; i < n; i++) {
       const v = voices[i];
       const p = orbPos[i];
-      const reg = Math.max(0, Math.min(1, (v.midi - 40) / 44));
-      // pitch -> hue blend between accent (low) and ink (high)
-      const r = accCol[0] * (1 - reg) + inkCol[0] * reg;
-      const g = accCol[1] * (1 - reg) + inkCol[1] * reg;
-      const b = accCol[2] * (1 - reg) + inkCol[2] * reg;
+      const col = voiceColor(v);
       // strike bloom: size swells briefly after a strike
       const audioNow = engine.ctx ? engine.ctx.currentTime : now;
       const since = v.viz.strike ? audioNow - v.viz.strike : 99;
@@ -387,7 +426,7 @@ export function createWebGLRenderer({ canvas, engine, levRef }) {
       const famSize = FAMILY_SIZE[v.family] || 1.0;
       const size = (120 * famSize + bloomK * 220 + bloom * 60) * dim.dpr;
       const alpha = 0.55 + bloomK * 0.4 + lev * 0.2;
-      pushPoint(p[0], p[1], p[2], size, r, g, b, Math.min(1, alpha));
+      pushPoint(p[0], p[1], p[2], size, col[0], col[1], col[2], Math.min(1, alpha));
     }
 
     // particles — advance & fade
