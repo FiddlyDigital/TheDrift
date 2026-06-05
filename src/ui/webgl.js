@@ -136,7 +136,7 @@ function hex(str) {
 }
 
 const MAX_PARTICLES = 480;
-const TRAIL_LEN = 28;            // history points streaming behind each orb
+const TRAIL_LEN = 60;            // history points streaming behind each orb
 const TWO_PI = Math.PI * 2;
 
 export function createWebGLRenderer({ canvas, engine, levRef }) {
@@ -384,6 +384,7 @@ export function createWebGLRenderer({ canvas, engine, levRef }) {
     gl.useProgram(lineProg);
     gl.uniformMatrix4fv(lProj, false, proj);
     gl.uniformMatrix4fv(lView, false, view);
+    gl.lineWidth(2);
     const ringSegs = 72;
     const ringVerts = new Float32Array((ringSegs + 1) * 3);
     gl.bindBuffer(gl.ARRAY_BUFFER, lineBuf);
@@ -399,8 +400,10 @@ export function createWebGLRenderer({ canvas, engine, levRef }) {
       }
       gl.bufferData(gl.ARRAY_BUFFER, ringVerts, gl.DYNAMIC_DRAW);
       gl.vertexAttribPointer(lPos, 3, gl.FLOAT, false, 0, 0);
-      const ringA = 0.06 + levHigh * 0.12;
-      gl.uniform4f(lColor, inkCol[0], inkCol[1], inkCol[2], ringA);
+      // voice-tinted rings, brighter and reactive to the high-frequency energy
+      const rc = voiceColor(voices[i]);
+      const ringA = 0.22 + levHigh * 0.3;
+      gl.uniform4f(lColor, rc[0], rc[1], rc[2], ringA);
       gl.drawArrays(gl.LINE_STRIP, 0, ringSegs + 1);
     }
 
@@ -428,9 +431,10 @@ export function createWebGLRenderer({ canvas, engine, levRef }) {
       ];
     }
 
-    // trails — a comet stream behind each orb, fading toward the tail.
-    // longer reverb (space) lengthens the visible trail.
-    const trailFrac = 0.45 + (engine.params.space || 0) * 0.55;
+    // trails — a long, luminous comet stream behind each orb. The tail
+    // stays bright through the middle and only fades near its end, so each
+    // orb drags a glowing arc of its orbit. Reverb (space) extends it.
+    const trailFrac = 0.72 + (engine.params.space || 0) * 0.27;
     for (let i = 0; i < n; i++) {
       const tr = trails[i];
       if (!tr || tr.count < 2) continue;
@@ -440,12 +444,12 @@ export function createWebGLRenderer({ canvas, engine, levRef }) {
         // walk backward from the most recent sample
         const idx = ((tr.head - 1 - k) % TRAIL_LEN + TRAIL_LEN) % TRAIL_LEN;
         const age = k / shown;                 // 0 (near orb) .. 1 (tail)
-        const fade = (1 - age) * (1 - age);    // quadratic falloff
+        const fade = 1 - age;                  // linear: holds brightness longer
         pushPoint(
           tr.pos[idx * 3], tr.pos[idx * 3 + 1], tr.pos[idx * 3 + 2],
-          (10 + fade * 70) * dim.dpr,
+          (14 + fade * 96) * dim.dpr,
           col[0], col[1], col[2],
-          fade * 0.5
+          (0.12 + fade * 0.7)
         );
       }
     }
@@ -465,8 +469,12 @@ export function createWebGLRenderer({ canvas, engine, levRef }) {
       const bloomK = since >= 0 && since < 1.6 ? (1 - since / 1.6) : 0;
       const famSize = FAMILY_SIZE[v.family] || 1.0;
       const size = (120 * famSize + bloomK * 220 + bloom * 60) * dim.dpr;
-      const alpha = 0.55 + bloomK * 0.4 + lev * 0.2;
+      const alpha = 0.6 + bloomK * 0.4 + lev * 0.2;
+      // soft colored halo
       pushPoint(p[0], p[1], p[2], size, col[0], col[1], col[2], Math.min(1, alpha));
+      // hot bright core — pushes color toward white for high contrast
+      const cr = col[0] * 0.4 + 0.6, cg = col[1] * 0.4 + 0.6, cb = col[2] * 0.4 + 0.6;
+      pushPoint(p[0], p[1], p[2], size * 0.42, cr, cg, cb, Math.min(1, 0.5 + bloomK * 0.5));
     }
 
     // particles — advance & fade
