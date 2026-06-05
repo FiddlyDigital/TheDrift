@@ -40,6 +40,12 @@ export const VizIcon = () => (
     <circle cx="16.6" cy="14.4" r="1.1" fill="currentColor" stroke="none" />
   </svg>
 );
+export const CubeIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round">
+    <path d="M12 3 20 7.5v9L12 21 4 16.5v-9z" />
+    <path d="M4 7.5 12 12l8-4.5M12 12v9" />
+  </svg>
+);
 export const ReturnIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
     <path d="M14.5 5l-7 7 7 7" />

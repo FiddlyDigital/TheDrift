@@ -18,10 +18,11 @@ import {
   PlayIcon, PauseIcon, DiceIcon, LinkIcon, InstallIcon,
   FullscreenIcon, FullscreenExitIcon, VizIcon, ReturnIcon,
   SpeakerIcon, MoonIcon, BreathIcon, BellIcon, SlidersIcon,
-  RouteIcon, InfoIcon, DownloadIcon, SunriseIcon, CloseIcon, SaveIcon,
+  RouteIcon, InfoIcon, DownloadIcon, SunriseIcon, CloseIcon, SaveIcon, CubeIcon,
 } from './icons.jsx';
 import { drawGlyph, FAMILY_LABEL, MOOD_VIZ, GlyphSVG } from './glyphs.jsx';
 import { createRenderer } from './canvas.js';
+import { createWebGLRenderer } from './webgl.js';
 import { Dial } from './components/Dial.jsx';
 import { Slider } from './components/Slider.jsx';
 
@@ -138,6 +139,7 @@ export default function App() {
   const [copied, setCopied] = useState(false);
   const [families, setFamilies] = useState([]);
   const [immersive, setImmersive] = useState(true);
+  const [vizMode, setVizMode] = useState("mandala"); // "mandala" | "space"
   const [vizUiVisible, setVizUiVisible] = useState(true);
   const [sheet, setSheet] = useState(null);
   const [exportMin, setExportMin] = useState(2);
@@ -212,6 +214,7 @@ export default function App() {
   const idleTimerRef = useRef(null);
 
   const canvasRef = useRef(null);
+  const glCanvasRef = useRef(null);
   const ripplesRef = useRef([]);
   const levRef = useRef({ level: 0, low: 0, high: 0 });
   const bellSeenRef = useRef(0);
@@ -223,6 +226,8 @@ export default function App() {
   const breathRef = useRef(breathOn);
   const breathPatRef = useRef(breathPat);
   const emitRippleRef = useRef(null);
+  const vizModeRef = useRef("mandala");
+  const glRendererRef = useRef(null);
 
   useEffect(() => {
     breathRef.current = breathOn;
@@ -918,7 +923,7 @@ export default function App() {
       canvas.width = Math.round(r.width * dpr);
       canvas.height = Math.round(r.height * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      return { w: r.width, h: r.height };
+      return { w: r.width, h: r.height, dpr };
     }
     let dim = resize();
     const onResize = () => { dim = resize(); };
@@ -940,12 +945,27 @@ export default function App() {
     function loop() {
       const audioNow = ENGINE.ctx ? ENGINE.ctx.currentTime : performance.now() / 1000;
       if (startedAtRef.current && ENGINE.playing) setElapsedThrottled(audioNow - startedAtRef.current);
+      // the 2D renderer always runs: it advances voice progress, strikes and
+      // levels that the WebGL "space" view also reads each frame.
       drawFrame(dim);
+      if (vizModeRef.current === "space" && immersiveRef.current && glCanvasRef.current) {
+        if (!glRendererRef.current) {
+          glRendererRef.current = createWebGLRenderer({ canvas: glCanvasRef.current, engine: ENGINE, levRef });
+        }
+        if (glRendererRef.current) glRendererRef.current.draw(dim);
+      }
       raf = requestAnimationFrame(loop);
     }
     raf = requestAnimationFrame(loop);
-    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", onResize); };
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", onResize);
+      if (glRendererRef.current) { glRendererRef.current.destroy(); glRendererRef.current = null; }
+    };
   }, []);
+
+  // keep the loop's ref in sync with the vizMode state
+  useEffect(() => { vizModeRef.current = vizMode; }, [vizMode]);
 
   const fmt = (s) => {
     s = Math.max(0, Math.floor(s));
@@ -995,6 +1015,7 @@ export default function App() {
 
       <div className="field-wrap">
         <canvas className="field" ref={canvasRef}></canvas>
+        <canvas className={"field field-gl" + (vizMode === "space" && immersive ? " show" : "")} ref={glCanvasRef}></canvas>
         <div className="field-hint">{ensembleName} &middot; {moodName} &middot; {params.density} loops</div>
         {!playing && (
           <div className="idle-veil" onClick={toggle}>
@@ -1238,6 +1259,12 @@ export default function App() {
               ))}
             </div>
           )}
+          <button className={"viz-chip mini" + (vizMode === "space" ? " active" : "")}
+            onClick={() => setVizMode((m) => (m === "space" ? "mandala" : "space"))}
+            aria-label={vizMode === "space" ? "Switch to mandala" : "Switch to 3D space"}
+            title={vizMode === "space" ? "Mandala view" : "3D space view"}>
+            {vizMode === "space" ? <VizIcon /> : <CubeIcon />}
+          </button>
           <button className="viz-chip mini" onClick={toggleFullscreen}
             aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"} title={isFullscreen ? "Windowed" : "Fullscreen"}>
             {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
