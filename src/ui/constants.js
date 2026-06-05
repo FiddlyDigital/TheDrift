@@ -66,25 +66,28 @@ export const INT_KEYS = { density: true, seed: true };
 export const NUM_DEFAULTS = { density: 6, tempo: 0.5, drift: 0.55, register: 0.5, space: 0.6, color: 0.5, stutter: 0.15, bloom: 0.2, evolve: 0.4, journey: 0, glue: 0.25, tuning: 440, binlevel: 0.4, texlevel: 0.5, looplevel: 1, seed: 1148 };
 
 // ---- curated scenes: one tap sets the whole instrument ---------------
+// ordered as a calm -> alert gradient. Every preset holds a fixed mood
+// (journey: 0) so it has a stable identity — autonomous migration is the
+// job of the Journeys arcs below; here, slow life comes from `evolve`.
 export const SCENES = [
-  // deep sleep — delta, hushed felt piano, baroque-mellow tuning, rain over a brown bed
-  { name: "Deep Rest",   p: { mood: "elegy",      ensemble: "piano",     density: 4, tempo: 0.12, drift: 0.58, register: 0.20, space: 0.92, color: 0.26, stutter: 0.00, bloom: 0.10, evolve: 0.22, journey: 0.00, glue: 0.15, tuning: 415, binaural: "delta", binlevel: 0.42, texture: "rain.brown", texlevel: 0.42, looplevel: 0.84 } },
-  // seated meditation — theta, open choir, grounding 432, wind
-  { name: "Stillness",   p: { mood: "open",       ensemble: "choir",     density: 5, tempo: 0.20, drift: 0.50, register: 0.46, space: 0.80, color: 0.42, stutter: 0.00, bloom: 0.14, evolve: 0.28, journey: 0.00, glue: 0.20, tuning: 432, binaural: "theta", binlevel: 0.42, texture: "wind",        texlevel: 0.34, looplevel: 0.92 } },
-  // heart-opening / healing — theta, warm handpan, 528 transformation tuning, fire
-  { name: "Inner Sun",   p: { mood: "vast",       ensemble: "handpan",   density: 7, tempo: 0.40, drift: 0.66, register: 0.48, space: 0.74, color: 0.60, stutter: 0.04, bloom: 0.40, evolve: 0.50, journey: 0.30, glue: 0.40, tuning: 444, binaural: "theta", binlevel: 0.30, texture: "fire",        texlevel: 0.30, looplevel: 1 } },
-  // drifting in and out of phase — soft kalimba & frame drums, rain
-  { name: "Tide",        p: { mood: "drift",      ensemble: "percussion",density: 7, tempo: 0.34, drift: 0.78, register: 0.42, space: 0.70, color: 0.52, stutter: 0.06, bloom: 0.20, evolve: 0.45, journey: 0.22, glue: 0.28, tuning: 432, binaural: "off",   binlevel: 0.40, texture: "rain",        texlevel: 0.40, looplevel: 1 } },
-  // calm focus — alpha, steady strings, pink noise, standard pitch
-  { name: "Clear Mind",  p: { mood: "suspended",  ensemble: "strings",   density: 6, tempo: 0.42, drift: 0.40, register: 0.52, space: 0.50, color: 0.50, stutter: 0.00, bloom: 0.12, evolve: 0.26, journey: 0.00, glue: 0.30, tuning: 440, binaural: "alpha", binlevel: 0.34, texture: "pink",        texlevel: 0.30, looplevel: 1 } },
-  // alert flow — beta, bright glasswork, a breath of white noise
-  { name: "Quickening",  p: { mood: "curious",    ensemble: "glasswork", density: 8, tempo: 0.58, drift: 0.48, register: 0.60, space: 0.46, color: 0.74, stutter: 0.08, bloom: 0.34, evolve: 0.40, journey: 0.10, glue: 0.38, tuning: 440, binaural: "beta",  binlevel: 0.30, texture: "white",       texlevel: 0.22, looplevel: 1 } },
-  // nostalgic dusk — gentle 8-bit, tape hiss & static
-  { name: "Arcade Dusk", p: { mood: "pensive",    ensemble: "eightbit",  density: 6, tempo: 0.50, drift: 0.55, register: 0.56, space: 0.60, color: 0.62, stutter: 0.10, bloom: 0.24, evolve: 0.46, journey: 0.40, glue: 0.34, tuning: 440, binaural: "off",   binlevel: 0.40, texture: "tape.static", texlevel: 0.34, looplevel: 1 } },
-  // ceremonial migration — world percussion, wandering journey, bright 448, wind
-  { name: "Procession",  p: { mood: "dusk",       ensemble: "world",     density: 9, tempo: 0.56, drift: 0.70, register: 0.44, space: 0.68, color: 0.55, stutter: 0.12, bloom: 0.22, evolve: 0.50, journey: 0.60, glue: 0.42, tuning: 448, binaural: "off",   binlevel: 0.40, texture: "wind",        texlevel: 0.40, looplevel: 1 } },
-  // the full orchestra, slowly re-voicing under warm vinyl — a long evening listen
-  { name: "Reverie",     p: { mood: "reflection", ensemble: "orchestra", density: 10,tempo: 0.44, drift: 0.64, register: 0.50, space: 0.78, color: 0.58, stutter: 0.06, bloom: 0.30, evolve: 0.60, journey: 0.40, glue: 0.50, tuning: 432, binaural: "off",   binlevel: 0.40, texture: "vinyl",       texlevel: 0.32, looplevel: 1 } },
+  // deep sleep — barely-moving felt piano in an airy major haze, delta beat, rain over a brown-noise bed
+  { name: "Deep Rest",   p: { mood: "drift",      ensemble: "piano",     density: 3, tempo: 0.10, drift: 0.55, register: 0.18, space: 0.94, color: 0.22, stutter: 0.00, bloom: 0.08, evolve: 0.18, journey: 0.00, glue: 0.12, tuning: 432, binaural: "delta", binlevel: 0.45, texture: "rain.brown", texlevel: 0.40, looplevel: 0.80 } },
+  // seated meditation — wide, thirdless choir, theta beat, a thread of wind
+  { name: "Stillness",   p: { mood: "open",       ensemble: "choir",     density: 4, tempo: 0.16, drift: 0.46, register: 0.44, space: 0.86, color: 0.40, stutter: 0.00, bloom: 0.12, evolve: 0.26, journey: 0.00, glue: 0.18, tuning: 432, binaural: "theta", binlevel: 0.42, texture: "wind",        texlevel: 0.30, looplevel: 0.92 } },
+  // drifting in and out of phase — soft kalimba & frame drums at maximum spread, rain
+  { name: "Tide",        p: { mood: "drift",      ensemble: "percussion",density: 6, tempo: 0.30, drift: 0.88, register: 0.40, space: 0.72, color: 0.50, stutter: 0.05, bloom: 0.18, evolve: 0.45, journey: 0.00, glue: 0.26, tuning: 432, binaural: "off",   binlevel: 0.40, texture: "rain",        texlevel: 0.40, looplevel: 1 } },
+  // heart-opening warmth — luminous handpan sky, 528 tuning, a low fire
+  { name: "Inner Sun",   p: { mood: "vast",       ensemble: "handpan",   density: 6, tempo: 0.34, drift: 0.62, register: 0.50, space: 0.74, color: 0.62, stutter: 0.04, bloom: 0.42, evolve: 0.40, journey: 0.00, glue: 0.34, tuning: 444, binaural: "theta", binlevel: 0.30, texture: "fire",        texlevel: 0.28, looplevel: 1 } },
+  // calm focus — steady, dry, thirdless strings that stay out of the way, alpha beat, a hush of pink noise
+  { name: "Clear Mind",  p: { mood: "suspended",  ensemble: "strings",   density: 5, tempo: 0.44, drift: 0.36, register: 0.52, space: 0.42, color: 0.48, stutter: 0.00, bloom: 0.08, evolve: 0.22, journey: 0.00, glue: 0.30, tuning: 440, binaural: "alpha", binlevel: 0.32, texture: "pink",        texlevel: 0.26, looplevel: 1 } },
+  // a long evening listen — the full orchestra slowly re-voicing under warm vinyl
+  { name: "Reverie",     p: { mood: "reflection", ensemble: "orchestra", density: 9, tempo: 0.46, drift: 0.64, register: 0.50, space: 0.80, color: 0.58, stutter: 0.05, bloom: 0.28, evolve: 0.58, journey: 0.00, glue: 0.48, tuning: 432, binaural: "off",   binlevel: 0.40, texture: "vinyl",       texlevel: 0.30, looplevel: 1 } },
+  // ceremonial world percussion — tabla, balafon & udu in a bright, processional 448, wind
+  { name: "Procession",  p: { mood: "dusk",       ensemble: "world",     density: 7, tempo: 0.54, drift: 0.66, register: 0.44, space: 0.64, color: 0.56, stutter: 0.10, bloom: 0.20, evolve: 0.50, journey: 0.00, glue: 0.42, tuning: 448, binaural: "off",   binlevel: 0.40, texture: "wind",        texlevel: 0.36, looplevel: 1 } },
+  // nostalgic 8-bit dusk — gentle chiptune through tape hiss & static
+  { name: "Arcade Dusk", p: { mood: "pensive",    ensemble: "eightbit",  density: 6, tempo: 0.50, drift: 0.52, register: 0.56, space: 0.58, color: 0.64, stutter: 0.08, bloom: 0.22, evolve: 0.42, journey: 0.00, glue: 0.34, tuning: 440, binaural: "off",   binlevel: 0.40, texture: "tape.static", texlevel: 0.32, looplevel: 1 } },
+  // alert flow — bright, busy glasswork at pace, beta beat, a breath of white noise
+  { name: "Quickening",  p: { mood: "curious",    ensemble: "glasswork", density: 7, tempo: 0.62, drift: 0.44, register: 0.60, space: 0.44, color: 0.80, stutter: 0.06, bloom: 0.34, evolve: 0.38, journey: 0.00, glue: 0.38, tuning: 440, binaural: "beta",  binlevel: 0.28, texture: "white",       texlevel: 0.18, looplevel: 1 } },
 ];
 export const SCENE_DIAL_KEYS = ["mood", "ensemble", "density", "tempo", "drift", "register", "space", "color", "stutter", "bloom", "evolve", "journey", "glue", "tuning", "binaural", "binlevel", "texture", "texlevel", "looplevel"];
 export const SCENE_BY_NAME = {};
@@ -96,17 +99,22 @@ export const JOURNEY_CONT_KEYS = ["space", "color", "stutter", "bloom", "evolve"
 export const JOURNEYS = [
   {
     id: "sleep", name: "Into Sleep", total: 45, fadeOut: true,
-    blurb: "Calm focus easing down through stillness into delta sleep — then a slow fade to silence.",
+    blurb: "Calm focus easing down through the tide and stillness into delta sleep — then a slow fade to silence.",
     stops: ["Clear Mind", "Tide", "Stillness", "Deep Rest"],
   },
   {
     id: "focus", name: "Deep Focus", total: 50, fadeOut: false,
-    blurb: "A bright, alert opening that settles into a long alpha plateau, with a gentle theta cool-down.",
+    blurb: "A bright, alert start that settles into a long, steady alpha plateau, then a gentle theta cool-down.",
     stops: ["Quickening", "Clear Mind", "Clear Mind", "Stillness"],
   },
   {
+    id: "sunrise", name: "Sunrise", total: 30, fadeOut: false,
+    blurb: "Rising from stillness through the tide into warm, luminous light — pair it with the wake timer.",
+    stops: ["Stillness", "Tide", "Inner Sun", "Quickening"],
+  },
+  {
     id: "unwind", name: "Unwind", total: 25, fadeOut: false,
-    blurb: "Let the day come down — the full orchestra at dusk dissolving into a drifting tide.",
+    blurb: "Let the day come down — the full orchestra at dusk dissolving through nostalgia into a drifting tide.",
     stops: ["Reverie", "Arcade Dusk", "Tide"],
   },
 ];
