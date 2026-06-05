@@ -228,6 +228,9 @@ export default function App() {
   const emitRippleRef = useRef(null);
   const vizModeRef = useRef("mandala");
   const glRendererRef = useRef(null);
+  const breathRingRef = useRef(null);
+  const breathLabelRef = useRef(null);
+  const breathCountRef = useRef(null);
 
   useEffect(() => {
     breathRef.current = breathOn;
@@ -953,6 +956,23 @@ export default function App() {
           glRendererRef.current = createWebGLRenderer({ canvas: glCanvasRef.current, engine: ENGINE, levRef });
         }
         if (glRendererRef.current) glRendererRef.current.draw(dim);
+        // the 2D mandala draws its own breath guide; in 3D that canvas is
+        // hidden, so drive a DOM breath overlay from the same timing here.
+        if (breathRef.current && breathRingRef.current) {
+          const pat = BREATH_PATTERNS[breathPatRef.current] || BREATH_PATTERNS.calm;
+          let pos = audioNow % pat.total;
+          let phase = pat.seq[0], local = 0;
+          for (let k = 0; k < pat.seq.length; k++) {
+            if (pos < pat.seq[k].d) { phase = pat.seq[k]; local = pos / pat.seq[k].d; break; }
+            pos -= pat.seq[k].d;
+          }
+          const ease = phase.s0 === phase.s1
+            ? phase.s0
+            : phase.s0 + (phase.s1 - phase.s0) * (0.5 - 0.5 * Math.cos(local * Math.PI));
+          breathRingRef.current.style.transform = "translate(-50%,-50%) scale(" + (0.42 + ease * 0.58).toFixed(3) + ")";
+          if (breathLabelRef.current) breathLabelRef.current.textContent = phase.label;
+          if (breathCountRef.current) breathCountRef.current.textContent = String(Math.max(1, Math.ceil(phase.d - local * phase.d)));
+        }
       }
       raf = requestAnimationFrame(loop);
     }
@@ -1269,6 +1289,16 @@ export default function App() {
             aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"} title={isFullscreen ? "Windowed" : "Fullscreen"}>
             {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
           </button>
+        </div>
+      )}
+
+      {immersive && breathOn && vizMode === "space" && (
+        <div className="breath-overlay" aria-hidden="true">
+          <div className="breath-ring" ref={breathRingRef}></div>
+          <div className="breath-cue">
+            <span className="breath-label" ref={breathLabelRef}></span>
+            <span className="breath-count" ref={breathCountRef}></span>
+          </div>
         </div>
       )}
 
