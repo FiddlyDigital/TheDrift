@@ -172,21 +172,48 @@ export function createWebGLRenderer({ canvas, engine, levRef }) {
     return trails[i];
   }
 
-  // ---- camera state (drag to rotate) ----
+  // ---- camera state (drag to rotate, pinch / wheel to zoom) ----
   let yaw = 0.5, pitch = -0.55;       // radians
   let velYaw = 0, velPitch = 0;       // momentum after release
   let dragging = false;
   let lastX = 0, lastY = 0;
-  let autoSpin = true;                // idle rotation until first drag
+  let autoSpin = true;                // idle rotation until first interaction
+  let dist = 5.6;                     // camera distance (zoom)
+  const DIST_MIN = 2.6, DIST_MAX = 12;
+  let pinching = false;
+  let pinchStart = 0;                 // finger spread at gesture start
+  let pinchDist = 0;                  // camera distance at gesture start
+
+  function touchSpread(e) {
+    const a = e.touches[0], b = e.touches[1];
+    return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  }
 
   function onDown(e) {
-    dragging = true;
     autoSpin = false;
+    if (e.touches && e.touches.length >= 2) {
+      // two fingers -> pinch zoom, suspend rotation
+      pinching = true;
+      dragging = false;
+      pinchStart = touchSpread(e);
+      pinchDist = dist;
+      if (e.cancelable) e.preventDefault();
+      return;
+    }
+    dragging = true;
     const p = e.touches ? e.touches[0] : e;
     lastX = p.clientX; lastY = p.clientY;
     velYaw = 0; velPitch = 0;
   }
   function onMove(e) {
+    if (pinching && e.touches && e.touches.length >= 2) {
+      const spread = touchSpread(e);
+      if (pinchStart > 0) {
+        dist = Math.max(DIST_MIN, Math.min(DIST_MAX, pinchDist * (pinchStart / spread)));
+      }
+      if (e.cancelable) e.preventDefault();
+      return;
+    }
     if (!dragging) return;
     const p = e.touches ? e.touches[0] : e;
     const dx = p.clientX - lastX;
@@ -199,7 +226,19 @@ export function createWebGLRenderer({ canvas, engine, levRef }) {
     velPitch = dy * 0.006;
     if (e.cancelable) e.preventDefault();
   }
-  function onUp() { dragging = false; }
+  function onUp(e) {
+    dragging = false;
+    // end pinch only once both fingers lift; re-anchor if one remains
+    if (pinching) {
+      if (e.touches && e.touches.length >= 2) { pinchStart = touchSpread(e); pinchDist = dist; }
+      else { pinching = false; }
+    }
+  }
+  function onWheel(e) {
+    autoSpin = false;
+    dist = Math.max(DIST_MIN, Math.min(DIST_MAX, dist * (1 + e.deltaY * 0.001)));
+    if (e.cancelable) e.preventDefault();
+  }
 
   canvas.addEventListener("mousedown", onDown);
   window.addEventListener("mousemove", onMove);
@@ -207,6 +246,7 @@ export function createWebGLRenderer({ canvas, engine, levRef }) {
   canvas.addEventListener("touchstart", onDown, { passive: false });
   canvas.addEventListener("touchmove", onMove, { passive: false });
   canvas.addEventListener("touchend", onUp);
+  canvas.addEventListener("wheel", onWheel, { passive: false });
 
   // ---- per-voice orbital params, seeded & stable per voice id ----
   function seedRand(n) {
@@ -314,7 +354,7 @@ export function createWebGLRenderer({ canvas, engine, levRef }) {
       velPitch *= 0.94;
     }
     const proj = mat4Perspective(Math.PI / 3, w / h, 0.1, 50);
-    const view = mat4ViewRot(yaw, pitch, 5.6);
+    const view = mat4ViewRot(yaw, pitch, dist);
 
     // ---- compute orb world positions, detect strikes, record trails ----
     const orbPos = [];
@@ -473,6 +513,7 @@ export function createWebGLRenderer({ canvas, engine, levRef }) {
     canvas.removeEventListener("touchstart", onDown);
     canvas.removeEventListener("touchmove", onMove);
     canvas.removeEventListener("touchend", onUp);
+    canvas.removeEventListener("wheel", onWheel);
     gl.deleteBuffer(pointBuf);
     gl.deleteBuffer(lineBuf);
     gl.deleteProgram(pointProg);
