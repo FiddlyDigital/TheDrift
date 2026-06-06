@@ -1404,20 +1404,29 @@ export default function App() {
                     if (spec.note != null && pool.indexOf(spec.note) < 0) pool = [spec.note].concat(pool);
                     return (
                       <div className="loom-row" key={i}>
-                        <span className="loom-glyph"><GlyphSVG family={spec.inst && AE.INSTRUMENTS[spec.inst] ? AE.INSTRUMENTS[spec.inst].family : "piano"} /></span>
-                        <select className="loom-select" value={spec.inst || "*"}
-                          onChange={(e) => setVoiceField(i, { inst: e.target.value === "*" ? null : e.target.value })}>
-                          <option value="*">✱ random</option>
-                          {INSTRUMENT_KEYS.map((k) => (<option key={k} value={k}>{k}</option>))}
-                        </select>
-                        <select className="loom-select" value={spec.note == null ? "_" : String(spec.note)}
-                          onChange={(e) => setVoiceField(i, { note: e.target.value === "_" ? null : +e.target.value })}>
-                          <option value="_">roam</option>
-                          {pool.map((m) => (<option key={m} value={m}>{noteLabel(m)}</option>))}
-                        </select>
+                        <div className="loom-top">
+                          <span className="loom-glyph"><GlyphSVG family={spec.inst && AE.INSTRUMENTS[spec.inst] ? AE.INSTRUMENTS[spec.inst].family : "piano"} /></span>
+                          <select className="loom-select" value={spec.inst || "*"}
+                            onChange={(e) => setVoiceField(i, { inst: e.target.value === "*" ? null : e.target.value })}>
+                            <option value="*">✱ random</option>
+                            {INSTRUMENT_KEYS.map((k) => (<option key={k} value={k}>{k}</option>))}
+                          </select>
+                          <select className="loom-select" value={spec.note == null ? "_" : String(spec.note)}
+                            onChange={(e) => setVoiceField(i, { note: e.target.value === "_" ? null : +e.target.value })}>
+                            <option value="_">roam</option>
+                            {pool.map((m) => (<option key={m} value={m}>{noteLabel(m)}</option>))}
+                          </select>
+                          <button className={"loom-lock" + (spec.lock ? " on" : "")}
+                            onClick={() => setVoiceField(i, { lock: !spec.lock })}
+                            title={spec.lock ? "Locked — holds note & length" : "Unlocked — slowly roams"}>
+                            {spec.lock ? <LockIcon /> : <UnlockIcon />}
+                          </button>
+                          <button className="loom-remove" onClick={() => removeVoice(i)} aria-label="Remove voice"><CloseIcon /></button>
+                        </div>
                         <div className="loom-len">
+                          <span className="loom-len-label">Length</span>
                           {spec.len == null ? (
-                            <button className="chip mini" onClick={() => setVoiceField(i, { len: 12 })}>length: roam</button>
+                            <button className="chip mini loom-len-roam" onClick={() => setVoiceField(i, { len: 12 })}>roaming &middot; tap to pin</button>
                           ) : (
                             <>
                               <input type="range" className="loom-range" min={3.5} max={48} step={0.5}
@@ -1427,12 +1436,6 @@ export default function App() {
                             </>
                           )}
                         </div>
-                        <button className={"loom-lock" + (spec.lock ? " on" : "")}
-                          onClick={() => setVoiceField(i, { lock: !spec.lock })}
-                          title={spec.lock ? "Locked — holds note & length" : "Unlocked — slowly roams"}>
-                          {spec.lock ? <LockIcon /> : <UnlockIcon />}
-                        </button>
-                        <button className="loom-remove" onClick={() => removeVoice(i)} aria-label="Remove voice"><CloseIcon /></button>
                       </div>
                     );
                   })}

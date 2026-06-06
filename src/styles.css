@@ -1194,22 +1194,28 @@ body {
 .loom-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .loom-head .row-label { width: auto; margin: 0; }
 .loom-actions { display: flex; gap: 7px; }
-.loom { display: flex; flex-direction: column; gap: 7px; }
+.loom { display: flex; flex-direction: column; gap: 9px; }
 .loom-row {
-  display: flex; align-items: center; gap: 8px;
-  padding: 7px 8px; border: 1px solid var(--ink-line); border-radius: 3px;
+  display: flex; flex-direction: column; gap: 9px;
+  padding: 9px 10px; border: 1px solid var(--ink-line); border-radius: 3px;
   background: rgba(44, 39, 26, 0.02);
 }
+.loom-top { display: flex; align-items: center; gap: 8px; }
 .loom-glyph { flex: none; width: 14px; height: 14px; opacity: 0.85; display: inline-flex; }
 .loom-select {
   font-family: var(--mono); font-size: 11px; color: var(--ink);
   background: var(--paper); border: 1px solid var(--ink-line); border-radius: 2px;
-  padding: 4px 5px; cursor: pointer; max-width: 110px;
+  padding: 5px 5px; cursor: pointer; flex: 1; min-width: 0;
 }
-.loom-select:first-of-type { min-width: 86px; }
-.loom-len { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 120px; }
-.loom-range { flex: 1; accent-color: var(--accent); cursor: pointer; min-width: 60px; }
-.loom-len-val { font-family: var(--mono); font-size: 10.5px; color: var(--ink-2); min-width: 34px; }
+/* length on its own full-width row — easier to drag on mobile, finer control */
+.loom-len { display: flex; align-items: center; gap: 9px; padding-left: 22px; }
+.loom-len-label {
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--ink-3); flex: none;
+}
+.loom-range { flex: 1; accent-color: var(--accent); cursor: pointer; min-width: 60px; height: 22px; }
+.loom-len-val { font-family: var(--mono); font-size: 11px; color: var(--ink-2); min-width: 40px; text-align: right; }
+.loom-len-roam { flex: 1; }
 .chip.mini { padding: 4px 8px; font-size: 10px; }
 .chip.mini.ghost { border-color: transparent; opacity: 0.6; padding: 4px 6px; }
 .chip.mini.ghost:hover { opacity: 1; border-color: var(--ink-line); }
