@@ -1244,3 +1244,21 @@ body {
   font-family: var(--mono); font-size: 10px; color: var(--ink-3);
   letter-spacing: 0.02em; line-height: 1.4; flex: 1; min-width: 160px;
 }
+
+/* ---- MIDI mapping (Atelier) ---- */
+.midi-devices {
+  font-family: var(--mono); font-size: 10.5px; color: var(--ink-2);
+  letter-spacing: 0.02em;
+}
+.midi-map { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+.midi-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 8px; border: 1px solid var(--ink-line); border-radius: 3px;
+  background: rgba(44, 39, 26, 0.02);
+}
+.midi-row.learning { border-color: var(--accent); background: var(--accent-2); }
+.midi-label { font-family: var(--serif); font-size: 14px; color: var(--ink); flex: 1; }
+.midi-binding {
+  font-family: var(--mono); font-size: 10.5px; color: var(--ink-2);
+  min-width: 56px; text-align: right;
+}

@@ -227,6 +227,12 @@ instrument while preserving the drift model.
 - **Per-voice lock.** A locked voice holds its pinned note and length;
   everything unlocked keeps slowly evolving, and stereo/timbre always drift.
   Authored voices still loop and phase-drift like every other voice.
+- **MIDI control (Web MIDI).** External controllers can drive the instrument.
+  A MIDI-learn flow binds any knob/fader to a control (Density, Tempo, Drift,
+  Register, Space, Color, Bloom, Stutter, Evolve, Journey, Glue, the mixer
+  levels, master volume) and any button/key to transport (Play/Pause, Start,
+  Stop) or scene changes (next/previous, reshuffle). Bindings are saved
+  locally. Requires a browser with Web MIDI support (Chromium-based).
 
 Atelier creations are encoded in the share URL like any other state.
 

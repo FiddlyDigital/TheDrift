@@ -25,8 +25,37 @@ import {
 import { drawGlyph, FAMILY_LABEL, MOOD_VIZ, GlyphSVG } from './glyphs.jsx';
 import { createRenderer } from './canvas.js';
 import { createWebGLRenderer } from './webgl.js';
+import { createMidiManager, isMidiSupported, parseMidi } from './midi.js';
 import { Dial } from './components/Dial.jsx';
 import { Slider } from './components/Slider.jsx';
+
+// ---- MIDI-mappable controls (Atelier) ----
+// "range" controls bind to a CC (knob/fader); "action" controls bind to a CC
+// (triggered at value >= 64) or a Note (triggered on note-on).
+const MIDI_CONTROLS = [
+  { id: "play", label: "Play / Pause", kind: "action" },
+  { id: "start", label: "Start", kind: "action" },
+  { id: "stop", label: "Stop", kind: "action" },
+  { id: "volume", label: "Master volume", kind: "range" },
+  { id: "looplevel", label: "Loops level", kind: "range" },
+  { id: "texlevel", label: "Ambience level", kind: "range" },
+  { id: "density", label: "Density", kind: "range" },
+  { id: "tempo", label: "Tempo", kind: "range" },
+  { id: "drift", label: "Drift", kind: "range" },
+  { id: "register", label: "Register", kind: "range" },
+  { id: "space", label: "Space", kind: "range" },
+  { id: "color", label: "Color", kind: "range" },
+  { id: "bloom", label: "Bloom", kind: "range" },
+  { id: "stutter", label: "Stutter", kind: "range" },
+  { id: "evolve", label: "Evolve", kind: "range" },
+  { id: "journey", label: "Journey", kind: "range" },
+  { id: "glue", label: "Glue", kind: "range" },
+  { id: "reshuffle", label: "Reshuffle", kind: "action" },
+  { id: "nextScene", label: "Next scene", kind: "action" },
+  { id: "prevScene", label: "Prev scene", kind: "action" },
+];
+const MIDI_CONTROL_BY_ID = {};
+MIDI_CONTROLS.forEach((c) => { MIDI_CONTROL_BY_ID[c.id] = c; });
 
 // ---- time-of-day helpers ----
 function easeInOut(t) { return 0.5 - 0.5 * Math.cos(Math.PI * Math.max(0, Math.min(1, t))); }
@@ -232,6 +261,24 @@ export default function App() {
     });
   }, []);
   useEffect(() => { ENGINE.setSpatial(spatial); }, []); // eslint-disable-line
+  // ---- Web MIDI mapping (Atelier) ----
+  const [midiSupported] = useState(isMidiSupported);
+  const [midiEnabled, setMidiEnabled] = useState(false);
+  const [midiInputs, setMidiInputs] = useState([]);
+  const [midiLearn, setMidiLearn] = useState(null);   // controlId being learned
+  const [midiMap, setMidiMap] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("loops.midimap") || "{}"); } catch (e) { return {}; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("loops.midimap", JSON.stringify(midiMap)); } catch (e) {}
+  }, [midiMap]);
+  const midiMgrRef = useRef(null);
+  const onMidiRef = useRef(null);
+  const midiLearnRef = useRef(null);
+  const midiMapRef = useRef(midiMap);
+  const applyMidiRef = useRef(null);
+  midiLearnRef.current = midiLearn;
+  midiMapRef.current = midiMap;
   const hideTimerRef = useRef(null);
   const wakeLockRef = useRef(null);
   const idleTimerRef = useRef(null);
@@ -561,6 +608,44 @@ export default function App() {
       setPlaying(true);
     }
   }, [elapsed]);
+
+  // incoming MIDI: in learn mode bind the message to the pending control;
+  // otherwise apply it to whatever control is mapped to that CC/note.
+  const onMidi = useCallback((data) => {
+    const msg = parseMidi(data);
+    if (!msg) return;
+    const learn = midiLearnRef.current;
+    if (learn) {
+      midiLearnRef.current = null;   // stop binding immediately (controllers stream)
+      setMidiMap((m) => Object.assign({}, m, { [learn]: { type: msg.type, number: msg.number } }));
+      setMidiLearn(null);
+      return;
+    }
+    const map = midiMapRef.current;
+    for (const id in map) {
+      const b = map[id];
+      if (b && b.type === msg.type && b.number === msg.number && applyMidiRef.current) applyMidiRef.current(id, msg);
+    }
+  }, []);
+  onMidiRef.current = onMidi;
+
+  const enableMidi = useCallback(async () => {
+    if (!isMidiSupported()) return;
+    if (!midiMgrRef.current) midiMgrRef.current = createMidiManager((data) => onMidiRef.current && onMidiRef.current(data));
+    try {
+      const ins = await midiMgrRef.current.enable();
+      setMidiInputs(ins);
+      setMidiEnabled(true);
+      try { localStorage.setItem("loops.midi", "1"); } catch (e) {}
+    } catch (e) { /* permission denied / unsupported */ }
+  }, []);
+
+  // re-attempt enabling if MIDI was on last session (permission persists)
+  useEffect(() => {
+    let on = false;
+    try { on = localStorage.getItem("loops.midi") === "1"; } catch (e) {}
+    if (on && isMidiSupported()) enableMidi();
+  }, [enableMidi]);
 
   const setSleep = useCallback((min) => {
     if (!min) { ENGINE.cancelFade(); setSleepDur(0); setSleepEnd(0); return; }
@@ -1120,6 +1205,31 @@ export default function App() {
   };
   const clearLoom = () => update("voices", "");
 
+  // apply a mapped MIDI message to its control (built each render so it closes
+  // over the current handlers); ranges read a CC 0..127, actions trigger.
+  const applyMidi = (id, msg) => {
+    const c = MIDI_CONTROL_BY_ID[id];
+    if (!c) return;
+    if (c.kind === "range") {
+      if (msg.type !== "cc") return;
+      const v = msg.value / 127;
+      if (id === "density") update("density", Math.max(2, Math.min(12, Math.round(2 + v * 10))));
+      else if (id === "volume") setVolume(v);
+      else update(id, v);
+    } else {
+      const on = msg.type === "note" ? true : msg.value >= 64;
+      if (!on) return;
+      if (id === "play") toggle();
+      else if (id === "start") { if (!ENGINE.playing) toggle(); }
+      else if (id === "stop") { if (ENGINE.playing) toggle(); }
+      else if (id === "reshuffle") reshuffle();
+      else if (id === "nextScene") cycleScene(1);
+      else if (id === "prevScene") cycleScene(-1);
+    }
+  };
+  applyMidiRef.current = applyMidi;
+  const clearMidiBinding = (id) => setMidiMap((m) => { const n = Object.assign({}, m); delete n[id]; return n; });
+
   return (
     <div className={"stage" + (immersive ? " immersive" : "") + (immersive && !vizUiVisible ? " hide-cursor" : "")}>
       <header className="head">
@@ -1472,6 +1582,43 @@ export default function App() {
                     <button className="loom-add" onClick={addVoice}><PlusIcon /> Add voice</button>
                   )}
                 </div>
+              )}
+            </div>
+
+            <div className="atelier-group">
+              <div className="loom-head">
+                <span className="row-label">MIDI</span>
+                <div className="loom-actions">
+                  {!midiSupported ? (
+                    <span className="atelier-hint">Not supported in this browser</span>
+                  ) : !midiEnabled ? (
+                    <button className="chip" onClick={enableMidi}>Enable MIDI</button>
+                  ) : (
+                    <span className="midi-devices">{midiInputs.length ? midiInputs.map((i) => i.name).join(", ") : "no devices connected"}</span>
+                  )}
+                </div>
+              </div>
+              {midiEnabled && (
+                <>
+                  <div className="midi-map">
+                    {MIDI_CONTROLS.map((c) => {
+                      const b = midiMap[c.id];
+                      const learning = midiLearn === c.id;
+                      return (
+                        <div className={"midi-row" + (learning ? " learning" : "")} key={c.id}>
+                          <span className="midi-label">{c.label}</span>
+                          <span className="midi-binding">{b ? (b.type === "cc" ? "CC " + b.number : "Note " + b.number) : "—"}</span>
+                          <button className={"chip mini" + (learning ? " active" : "")}
+                            onClick={() => setMidiLearn(learning ? null : c.id)}>
+                            {learning ? "move a control…" : "Learn"}
+                          </button>
+                          {b && <button className="chip mini ghost" onClick={() => clearMidiBinding(c.id)} title="clear binding">&times;</button>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="atelier-hint">Click <b>Learn</b>, then move a knob/fader or press a key on your controller to bind it. Knobs map to the ranges; buttons/keys map to transport (Play, Start, Stop) and scene changes.</p>
+                </>
               )}
             </div>
           </div>
