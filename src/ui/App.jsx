@@ -20,7 +20,7 @@ import {
   FullscreenIcon, FullscreenExitIcon, VizIcon, ReturnIcon,
   SpeakerIcon, MoonIcon, BreathIcon, BellIcon, SlidersIcon,
   RouteIcon, InfoIcon, DownloadIcon, SunriseIcon, CloseIcon, SaveIcon, CubeIcon,
-  LockIcon, UnlockIcon, PlusIcon,
+  LockIcon, UnlockIcon, PlusIcon, HeadphonesIcon,
 } from './icons.jsx';
 import { drawGlyph, FAMILY_LABEL, MOOD_VIZ, GlyphSVG } from './glyphs.jsx';
 import { createRenderer } from './canvas.js';
@@ -217,6 +217,21 @@ export default function App() {
   });
   const [expertToast, setExpertToast] = useState(false);
   const titleTapRef = useRef({ n: 0, t: 0 });
+  // 3D spatial audio (HRTF) — a local playback preference, like volume
+  const [spatial, setSpatial] = useState(() => {
+    try { return localStorage.getItem("loops.spatial") === "1"; } catch (e) { return false; }
+  });
+  const [spatialToast, setSpatialToast] = useState(false);
+  const toggleSpatial = useCallback(() => {
+    setSpatial((on) => {
+      const next = !on;
+      try { localStorage.setItem("loops.spatial", next ? "1" : "0"); } catch (e) {}
+      ENGINE.setSpatial(next);
+      if (next) { setSpatialToast(true); setTimeout(() => setSpatialToast(false), 2600); }
+      return next;
+    });
+  }, []);
+  useEffect(() => { ENGINE.setSpatial(spatial); }, []); // eslint-disable-line
   const hideTimerRef = useRef(null);
   const wakeLockRef = useRef(null);
   const idleTimerRef = useRef(null);
@@ -236,6 +251,7 @@ export default function App() {
   const emitRippleRef = useRef(null);
   const vizModeRef = useRef("mandala");
   const glRendererRef = useRef(null);
+  const cameraRef = useRef(null);
   const breathRingRef = useRef(null);
   const breathLabelRef = useRef(null);
   const breathCountRef = useRef(null);
@@ -959,9 +975,10 @@ export default function App() {
       // the 2D renderer always runs: it advances voice progress, strikes and
       // levels that the WebGL "space" view also reads each frame.
       drawFrame(dim);
-      if (vizModeRef.current === "space" && immersiveRef.current && glCanvasRef.current) {
+      const in3D = vizModeRef.current === "space" && immersiveRef.current;
+      if (in3D && glCanvasRef.current) {
         if (!glRendererRef.current) {
-          glRendererRef.current = createWebGLRenderer({ canvas: glCanvasRef.current, engine: ENGINE, levRef });
+          glRendererRef.current = createWebGLRenderer({ canvas: glCanvasRef.current, engine: ENGINE, levRef, cameraRef });
         }
         if (glRendererRef.current) glRendererRef.current.draw(dim);
         // the 2D mandala draws its own breath guide; in 3D that canvas is
@@ -981,6 +998,11 @@ export default function App() {
           if (breathLabelRef.current) breathLabelRef.current.textContent = phase.label;
           if (breathCountRef.current) breathCountRef.current.textContent = String(Math.max(1, Math.ceil(phase.d - local * phase.d)));
         }
+      }
+      // 3D spatial audio: place each voice's sound where its orb is. Follows
+      // the live camera in the 3D view, a fixed forward stage elsewhere.
+      if (ENGINE.spatial && ENGINE.playing) {
+        ENGINE.updateSpatial(in3D ? cameraRef.current : null);
       }
       raf = requestAnimationFrame(loop);
     }
@@ -1337,6 +1359,13 @@ export default function App() {
               <Dial name="Glue" value={params.glue} label={glueLabel(params.glue)}
                 min={0} max={1} step={0.01} onChange={(v) => update("glue", v)} />
             </div>
+            <div className="mood-row spatial-row">
+              <span className="row-label">Spatial</span>
+              <button className={"chip lg" + (spatial ? " active" : "")} onClick={toggleSpatial}>
+                <HeadphonesIcon /> {spatial ? "3D audio on" : "3D audio off"}
+              </button>
+              <span className="spatial-note">Places each voice in 3D to match the orrery — best with headphones.</span>
+            </div>
           </div>
         )}
 
@@ -1463,6 +1492,7 @@ export default function App() {
           <span className={"toast" + (savedToast ? " show" : "")}>kept in your library</span>
           <span className={"toast" + (copied ? " show" : "")}>link copied</span>
           <span className={"toast" + (expertToast ? " show" : "")}>Atelier unlocked &mdash; see the new tab</span>
+          <span className={"toast" + (spatialToast ? " show" : "")}>Spatial audio on &mdash; best with headphones</span>
           {installPrompt && (
             <button className="ghost-btn" onClick={install}><InstallIcon /> Install app</button>
           )}
@@ -1488,6 +1518,12 @@ export default function App() {
             aria-label={vizMode === "space" ? "Switch to mandala" : "Switch to 3D space"}
             title={vizMode === "space" ? "Mandala view" : "3D space view"}>
             {vizMode === "space" ? <VizIcon /> : <CubeIcon />}
+          </button>
+          <button className={"viz-chip mini" + (spatial ? " active" : "")}
+            onClick={toggleSpatial}
+            aria-label={spatial ? "Spatial audio on" : "Spatial audio off"}
+            title={spatial ? "Spatial audio on (headphones)" : "Spatial audio off"}>
+            <HeadphonesIcon />
           </button>
           <button className="viz-chip mini" onClick={toggleFullscreen}
             aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"} title={isFullscreen ? "Windowed" : "Fullscreen"}>

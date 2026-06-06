@@ -133,3 +133,10 @@ export const PlusIcon = () => (
     <path d="M12 5v14M5 12h14" />
   </svg>
 );
+export const HeadphonesIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
+    <path d="M5 13v-1a7 7 0 0 1 14 0v1" />
+    <rect x="3.5" y="13" width="3.6" height="6" rx="1.4" fill="currentColor" stroke="none" />
+    <rect x="16.9" y="13" width="3.6" height="6" rx="1.4" fill="currentColor" stroke="none" />
+  </svg>
+);

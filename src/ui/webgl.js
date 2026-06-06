@@ -1,4 +1,5 @@
 import { MOOD_VIZ } from './glyphs.jsx';
+import { assignOrbits, orbitPosition } from '../engine/orbit.js';
 
 /* The Drift — WebGL "Drift Space" renderer.
    An abstract 3D orrery: each voice is a glowing orb orbiting a central
@@ -32,25 +33,6 @@ function mat4ViewRot(yaw, pitch, dist) {
     r02, r12, r22, 0,
     0,   0,   -dist, 1,
   ]);
-}
-
-// rotate a point by the per-orbit tilt: spin around its plane, then tilt.
-// orbit plane is defined by tilt (lean) and azimuth (which way it leans).
-function orbitPoint(theta, radius, tilt, azimuth, out) {
-  // point on a flat ring in XZ
-  let x = Math.cos(theta) * radius;
-  let y = 0;
-  let z = Math.sin(theta) * radius;
-  // tilt around X axis
-  const ct = Math.cos(tilt), st = Math.sin(tilt);
-  let y1 = y * ct - z * st;
-  let z1 = y * st + z * ct;
-  let x1 = x;
-  // azimuth around Y axis (rotate which way the plane leans)
-  const ca = Math.cos(azimuth), sa = Math.sin(azimuth);
-  out[0] = x1 * ca + z1 * sa;
-  out[1] = y1;
-  out[2] = -x1 * sa + z1 * ca;
 }
 
 // ---- shaders ---------------------------------------------------------
@@ -139,7 +121,7 @@ const MAX_PARTICLES = 480;
 const TRAIL_LEN = 60;            // history points streaming behind each orb
 const TWO_PI = Math.PI * 2;
 
-export function createWebGLRenderer({ canvas, engine, levRef }) {
+export function createWebGLRenderer({ canvas, engine, levRef, cameraRef }) {
   const gl = canvas.getContext("webgl", { antialias: true, alpha: true, premultipliedAlpha: false });
   if (!gl) return null;
 
@@ -248,34 +230,14 @@ export function createWebGLRenderer({ canvas, engine, levRef }) {
   canvas.addEventListener("touchend", onUp);
   canvas.addEventListener("wheel", onWheel, { passive: false });
 
-  // ---- per-voice orbital params, seeded & stable per voice id ----
-  function seedRand(n) {
-    // deterministic hash -> 0..1, so each voice keeps its plane
-    let t = (n + 1) * 0.6180339887;
-    t = (Math.sin(t * 127.1) * 43758.5453);
-    return t - Math.floor(t);
-  }
-  const orbits = [];
+  // Orbit geometry ({radius,tilt,azimuth} per voice) is assigned by the engine
+  // on regenerate and read here as v.orbit, so the picture matches the spatial
+  // audio exactly. We only keep per-orb strike tracking for burst emission.
   function ensureOrbits() {
-    const n = engine.voices.length;
-    let maxP = 1, minP = 1e9;
-    for (const v of engine.voices) {
-      if (v.period > maxP) maxP = v.period;
-      if (v.period < minP) minP = v.period;
-    }
-    const span = Math.max(0.001, maxP - minP);
-    for (let i = 0; i < n; i++) {
-      const v = engine.voices[i];
-      const norm = (v.period - minP) / span;   // 0 (short) .. 1 (long)
-      orbits[i] = {
-        radius: 0.55 + norm * 1.35,             // longer loop -> wider orbit
-        tilt: (seedRand(i) - 0.5) * 1.4,        // -0.7..0.7 rad lean
-        azimuth: seedRand(i + 100) * TWO_PI,    // which way it leans
-        lastStrike: -1,
-      };
-    }
-    orbits.length = n;
+    if (engine.voices.some((v) => !v.orbit)) assignOrbits(engine.voices);
   }
+  const lastStrike = [];
+  let prevCount = -1;
   ensureOrbits();
 
   // ---- particle ring buffer ----
@@ -326,7 +288,8 @@ export function createWebGLRenderer({ canvas, engine, levRef }) {
 
     const voices = engine.voices;
     const n = voices.length;
-    if (orbits.length !== n) { ensureOrbits(); trails.length = 0; }
+    ensureOrbits();
+    if (prevCount !== n) { prevCount = n; trails.length = 0; lastStrike.length = 0; }
 
     const pal = MOOD_VIZ[engine.params.mood] || MOOD_VIZ.reflection;
     const bgEdge = hex(pal.bg[1] || "#08080c");
@@ -355,14 +318,16 @@ export function createWebGLRenderer({ canvas, engine, levRef }) {
     }
     const proj = mat4Perspective(Math.PI / 3, w / h, 0.1, 50);
     const view = mat4ViewRot(yaw, pitch, dist);
+    // publish the live camera so the spatial-audio updater can match it
+    if (cameraRef) cameraRef.current = { yaw: yaw, pitch: pitch, dist: dist };
 
     // ---- compute orb world positions, detect strikes, record trails ----
     const orbPos = [];
     for (let i = 0; i < n; i++) {
       const v = voices[i];
-      const ob = orbits[i];
+      const ob = v.orbit;
       const theta = (v.viz.prog || 0) * TWO_PI;
-      orbitPoint(theta, ob.radius, ob.tilt, ob.azimuth, tmp);
+      orbitPosition(ob, theta, tmp);
       orbPos.push([tmp[0], tmp[1], tmp[2]]);
 
       // push current position into this voice's trail ring buffer
@@ -374,8 +339,8 @@ export function createWebGLRenderer({ canvas, engine, levRef }) {
       if (tr.count < TRAIL_LEN) tr.count++;
 
       // strike detection -> burst
-      if (v.viz.strike && v.viz.strike !== ob.lastStrike) {
-        ob.lastStrike = v.viz.strike;
+      if (v.viz.strike && v.viz.strike !== lastStrike[i]) {
+        lastStrike[i] = v.viz.strike;
         emitBurst(tmp[0], tmp[1], tmp[2], voiceColor(v), 10);
       }
     }
@@ -390,10 +355,10 @@ export function createWebGLRenderer({ canvas, engine, levRef }) {
     gl.bindBuffer(gl.ARRAY_BUFFER, lineBuf);
     gl.enableVertexAttribArray(lPos);
     for (let i = 0; i < n; i++) {
-      const ob = orbits[i];
+      const ob = voices[i].orbit;
       for (let s = 0; s <= ringSegs; s++) {
         const th = (s / ringSegs) * TWO_PI;
-        orbitPoint(th, ob.radius, ob.tilt, ob.azimuth, tmp);
+        orbitPosition(ob, th, tmp);
         ringVerts[s * 3] = tmp[0];
         ringVerts[s * 3 + 1] = tmp[1];
         ringVerts[s * 3 + 2] = tmp[2];

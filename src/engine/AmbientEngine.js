@@ -1,5 +1,6 @@
 import { MOODS, MOOD_ORDER, INSTRUMENTS, ENSEMBLES, ENSEMBLE_ORDER, BINAURAL, BIN_CARRIER } from './constants.js';
 import { mulberry32, midiToFreq, clamp, noteName, hashMood } from './utils.js';
+import { assignOrbits, orbitPosition } from './orbit.js';
 
 /* The Drift — generative ambient engine
    Felt-piano synthesis + generated reverb + unequal-loop scheduler.
@@ -46,6 +47,7 @@ function AmbientEngine() {
   this.playing = false;
   this.voices = [];
   this.userVolume = 0.85;   // 0..1 master listening level
+  this.spatial = false;     // 3D HRTF placement matching the orrery (headphones)
   this.params = {
     mood: "reflection",
     ensemble: "piano", // instrument palette
@@ -515,6 +517,8 @@ AmbientEngine.prototype.regenerate = function (opts) {
   }
   voices.sort(function (a, b) { return a.period - b.period; });
   voices.forEach(function (v, idx) { v.row = idx; });
+  // stable orbit geometry shared with the WebGL view + spatial audio
+  assignOrbits(voices);
 
   // remember the scale pool so autonomous drift can re-voice notes later
   this._pool = pool;
@@ -526,10 +530,75 @@ AmbientEngine.prototype.regenerate = function (opts) {
   for (const v of voices) {
     v._out = out;
     v._mutateAt = now + (24 + rng() * 44) / (0.3 + ev);
+    if (this.spatial && this.ctx) this._buildVoiceSpatial(v);
   }
 
   if (crossfade) this._beginCrossfade(out);
   this.voices = voices;
+};
+
+// per-voice spatial chain: strikes feed _spatialBus -> HRTF panner -> field.
+// rolloffFactor 0 means distance never changes loudness — only direction.
+AmbientEngine.prototype._buildVoiceSpatial = function (v) {
+  const ctx = this.ctx;
+  v._spatialBus = ctx.createGain();
+  const pan = ctx.createPanner();
+  pan.panningModel = "HRTF";
+  pan.distanceModel = "inverse";
+  pan.rolloffFactor = 0;
+  v._panner = pan;
+  v._spatialBus.connect(pan);
+  pan.connect(v._out || this.fieldOut || this.bus);
+  // seed its starting position
+  orbitPosition(v.orbit, (v.viz.prev || 0) * Math.PI * 2, this._spTmp || (this._spTmp = [0, 0, 0]));
+  this._setPannerPos(pan, this._spTmp[0], this._spTmp[1], this._spTmp[2] - 5.6, 0);
+};
+
+// set a panner position (AudioParam path with a setPosition fallback)
+AmbientEngine.prototype._setPannerPos = function (pan, x, y, z, tc) {
+  if (pan.positionX) {
+    const t = this.ctx.currentTime;
+    if (tc > 0) {
+      pan.positionX.setTargetAtTime(x, t, tc);
+      pan.positionY.setTargetAtTime(y, t, tc);
+      pan.positionZ.setTargetAtTime(z, t, tc);
+    } else {
+      pan.positionX.setValueAtTime(x, t);
+      pan.positionY.setValueAtTime(y, t);
+      pan.positionZ.setValueAtTime(z, t);
+    }
+  } else if (pan.setPosition) {
+    pan.setPosition(x, y, z);
+  }
+};
+
+// toggle 3D spatial placement; rebuild routing so it takes effect cleanly
+AmbientEngine.prototype.setSpatial = function (on) {
+  on = !!on;
+  if (this.spatial === on) return;
+  this.spatial = on;
+  if (this.ctx) this.regenerate({ crossfade: !!this.playing });
+};
+
+// called once per animation frame by the UI: place every voice's sound where
+// its orb appears, rotated into the live camera's view so the soundstage turns
+// with the orrery. cam = { yaw, pitch, dist }.
+AmbientEngine.prototype.updateSpatial = function (cam) {
+  if (!this.spatial || !this.ctx || !this.voices) return;
+  const yaw = cam ? cam.yaw : 0, pitch = cam ? cam.pitch : 0, dist = cam ? cam.dist : 5.6;
+  const cy = Math.cos(yaw), sy = Math.sin(yaw);
+  const cx = Math.cos(pitch), sx = Math.sin(pitch);
+  const tmp = this._spTmp || (this._spTmp = [0, 0, 0]);
+  for (const v of this.voices) {
+    if (!v._panner || !v.orbit) continue;
+    orbitPosition(v.orbit, (v.viz.prog || 0) * Math.PI * 2, tmp);
+    const x = tmp[0], y = tmp[1], z = tmp[2];
+    // rotate world -> view with the same R as the WebGL camera (Rx(pitch)·Ry(yaw))
+    const vx = cy * x - sy * z;
+    const vy = sx * sy * x + cx * y + sx * cy * z;
+    const vz = cx * sy * x - sx * y + cx * cy * z;
+    this._setPannerPos(v._panner, vx, vy, vz - dist, 0.05);
+  }
 };
 
 // a fresh field gain, starting silent, ready to fade up into the bus
@@ -1150,8 +1219,14 @@ AmbientEngine.prototype._synthSustained = function (v, time, opts, inst) {
   this._panOut(v, g, onset, dur);
 };
 
-// stereo placement that drifts slowly and travels across the note's life
+// stereo placement that drifts slowly and travels across the note's life.
+// in spatial mode the note feeds the voice's persistent HRTF panner instead,
+// which is positioned each frame to match the orb in the 3D view.
 AmbientEngine.prototype._panOut = function (v, node, onset, span) {
+  if (this.spatial && v._spatialBus) {
+    node.connect(v._spatialBus);
+    return;
+  }
   const pan = this.ctx.createStereoPanner();
   pan.pan.setValueAtTime(this.panAt(v, onset), onset);
   pan.pan.linearRampToValueAtTime(this.panAt(v, onset + span), onset + span);
@@ -1362,6 +1437,7 @@ AmbientEngine.prototype.renderOffline = function (opts) {
   const r = new AmbientEngine();
   r.params = Object.assign({}, this.params, opts.params || {});
   r.userVolume = (opts.userVolume == null ? this.userVolume : opts.userVolume);
+  r.spatial = false;                    // print the stereo mix (no per-frame loop offline)
   r.ensureContext(octx);                // build the full graph on the offline ctx
   r.autoLevel = false;                  // freeze the leveler at the live trim
   if (r.levelTrim) r.levelTrim.gain.value = (opts.trim == null ? (this._trim || 1) : opts.trim);

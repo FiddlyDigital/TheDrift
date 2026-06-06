@@ -1235,3 +1235,12 @@ body {
 }
 .loom-add svg { width: 14px; height: 14px; }
 .loom-add:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---- spatial audio toggle (mixer) ---- */
+.spatial-row { margin-top: 18px; align-items: center; }
+.chip.lg { display: inline-flex; align-items: center; gap: 7px; }
+.chip.lg svg { width: 15px; height: 15px; }
+.spatial-note {
+  font-family: var(--mono); font-size: 10px; color: var(--ink-3);
+  letter-spacing: 0.02em; line-height: 1.4; flex: 1; min-width: 160px;
+}
