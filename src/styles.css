@@ -9,8 +9,8 @@
   --ink-line:rgba(44, 39, 31, 0.20);
   --accent:  #b0613a;       /* faded sienna */
   --accent-2: rgba(176, 97, 58, 0.14);
-  --serif: "Spectral", Georgia, serif;
-  --mono: "IBM Plex Mono", ui-monospace, monospace;
+  --serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
 }
 
 * { box-sizing: border-box; }

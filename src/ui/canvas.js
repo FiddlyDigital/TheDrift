@@ -134,7 +134,7 @@ export function createRenderer({ ctx, canvas, engine, ripplesRef, levRef, bellSe
       ctx.arc(px, y, 2.6, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(${ACC},0.95)`; ctx.fill();
 
-      ctx.font = (narrow ? "10px" : "11px") + " 'IBM Plex Mono', monospace";
+      ctx.font = (narrow ? "10px" : "11px") + ' ui-monospace, "SFMono-Regular", Menlo, monospace';
       ctx.textBaseline = "middle";
       ctx.textAlign = "right";
       ctx.fillStyle = `rgba(${INK},0.85)`;
@@ -142,7 +142,7 @@ export function createRenderer({ ctx, canvas, engine, ripplesRef, levRef, bellSe
       if (!narrow) {
         ctx.textAlign = "left";
         ctx.fillStyle = `rgba(${INK},0.4)`;
-        ctx.font = "9.5px 'IBM Plex Mono', monospace";
+        ctx.font = '9.5px ui-monospace, "SFMono-Regular", Menlo, monospace';
         ctx.fillText(v.period.toFixed(1) + "s", x1 + 8, y);
       }
     }
@@ -166,7 +166,7 @@ export function createRenderer({ ctx, canvas, engine, ripplesRef, levRef, bellSe
     ctx.beginPath(); ctx.moveTo(sx0, axisY); ctx.lineTo(sx1, axisY);
     ctx.strokeStyle = `rgba(${INK},0.10)`; ctx.stroke();
 
-    ctx.font = "9.5px 'IBM Plex Mono', monospace";
+    ctx.font = '9.5px ui-monospace, "SFMono-Regular", Menlo, monospace';
     ctx.fillStyle = `rgba(${INK},0.4)`;
     ctx.textBaseline = "middle";
     ctx.textAlign = "left"; ctx.fillText("STEREO DRIFT", sx0, sTop - 22);

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup } from '@testing-library/preact';
 
 // Use the real AmbientEngine for shape + statics (MOODS/ENSEMBLES/INSTRUMENTS),
 // but stub the methods that touch Web Audio so the UI can run headless.
