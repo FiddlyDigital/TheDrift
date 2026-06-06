@@ -25,6 +25,11 @@ vi.mock('../../engine/index.js', async (importOriginal) => {
 
 import App from '../App.jsx';
 import { ENGINE } from '../../engine/index.js';
+import { useDriftStore } from '../store/useDriftStore.js';
+
+// the store is a module singleton; snapshot its initial state and restore it
+// before each test so state doesn't leak between tests
+const initialState = useDriftStore.getState();
 
 beforeEach(() => {
   cleanup();
@@ -32,6 +37,7 @@ beforeEach(() => {
   location.hash = '';
   vi.clearAllMocks();
   ENGINE.playing = false;
+  useDriftStore.setState(initialState, true);
 });
 
 describe('App smoke (baseline behaviour to preserve)', () => {
