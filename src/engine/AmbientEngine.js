@@ -6,6 +6,40 @@ import { mulberry32, midiToFreq, clamp, noteName, hashMood } from './utils.js';
    ES module, converted from the original IIFE. The UI reads engine state
    each animation frame; the engine never touches the DOM. */
 
+// ---- expert "Atelier" parsing -------------------------------------
+// scale degrees encoded as "0.2.4.5.7.9.11" -> [0,2,4,5,7,9,11]
+export function parseScaleNotes(str) {
+  if (!str) return [];
+  const out = [];
+  for (const tok of String(str).split(".")) {
+    const n = parseInt(tok, 10);
+    if (!isNaN(n) && n >= 0 && n <= 11 && out.indexOf(n) < 0) out.push(n);
+  }
+  out.sort(function (a, b) { return a - b; });
+  return out;
+}
+// voice specs "inst:note:len:lock" joined by "," -> [{inst,note,len,lock}]
+// inst "*" = random from ensemble; note/len "_" = generative (roam)
+export function parseVoices(str) {
+  if (!str) return [];
+  const specs = [];
+  for (const part of String(str).split(",")) {
+    if (!part) continue;
+    const f = part.split(":");
+    const inst = f[0] && f[0] !== "*" ? f[0] : null;
+    const note = f[1] && f[1] !== "_" ? parseInt(f[1], 10) : null;
+    const len = f[2] && f[2] !== "_" ? parseFloat(f[2]) : null;
+    const lock = f[3] === "1";
+    specs.push({
+      inst: inst,
+      note: note != null && !isNaN(note) ? note : null,
+      len: len != null && !isNaN(len) ? len : null,
+      lock: lock,
+    });
+  }
+  return specs;
+}
+
 // ---- engine --------------------------------------------------------
 function AmbientEngine() {
   this.ctx = null;
@@ -397,12 +431,20 @@ AmbientEngine.prototype.regenerate = function (opts) {
   const instPool = ensemble.pool;
   const n = clamp(Math.round(p.density), 2, 12);
 
+  // expert "Atelier": custom key + scale override the mood's root/notes
+  let moodRoot = mood.root, moodNotes = mood.notes;
+  if (p.mood === "custom") {
+    moodRoot = (((Math.round(p.key || 0)) % 12) + 12) % 12;
+    const cn = parseScaleNotes(p.scaleNotes);
+    if (cn.length) moodNotes = cn;
+  }
+
   // register sets the lowest octave; build a 3-octave pool of scale tones
   const base = Math.round(41 + p.register * 19); // F2(41)..C4(60)
   const pool = [];
   for (let oct = 0; oct < 3; oct++) {
-    for (const d of mood.notes) {
-      const m = base + mood.root + d + 12 * oct;
+    for (const d of moodNotes) {
+      const m = base + moodRoot + d + 12 * oct;
       if (m <= base + 30) pool.push(m);
     }
   }
@@ -416,28 +458,37 @@ AmbientEngine.prototype.regenerate = function (opts) {
   const paceMult = Math.pow(2, (0.5 - p.tempo) * 2); // slow ~2x .. fast ~0.5x
 
   const now = this.ctx ? this.ctx.currentTime : 0;
-  const voices = [];
-  for (let i = 0; i < n; i++) {
-    const midi = pool[Math.floor(rng() * pool.length)];
-    const inst = instPool[Math.floor(rng() * instPool.length)];
-    const norm = clamp((midi - base) / 30, 0, 1); // 0 low .. 1 high
-    // lower notes loop slower (longer tape), like a bass drone
-    const pscale = 1 + (1 - norm) * 0.45;
-    let period = (minP + rng() * (maxP - minP)) * pscale * paceMult;
-    // irrational nudge so periods avoid clean ratios -> richer phasing
-    period += (rng() - 0.5) * 1.7 + (i % 2 === 0 ? 0.37 : -0.29);
-    period = clamp(period, 3.5, 64);
 
-    const phase = rng();                 // 0..1 initial offset
-    const startTime = now - phase * period;
-
-    // slow stereo-pan drift (an LFO per voice) -> spatial movement
+  // build one voice. RNG is consumed in a fixed order regardless of whether a
+  // field is hand-authored, so a custom spec only overrides the pinned fields
+  // (note/inst/length) and editing one voice never reshuffles the others.
+  const makeVoice = (i, spec) => {
+    let midi = pool[Math.floor(rng() * pool.length)];
+    let inst = instPool[Math.floor(rng() * instPool.length)];
+    const rPeriod = rng();                 // base spread draw
+    const rNudge = rng();                  // irrational nudge draw
+    const phase = rng();                   // 0..1 initial offset
     const panBase = (rng() * 1.4 - 0.7) * (0.4 + 0.6 * spread);
     const panDepth = (0.16 + rng() * 0.4) * (0.45 + 0.55 * spread);
     const panRate = 0.012 + rng() * 0.032; // Hz (~30..80s sweep)
     const panPhase = rng() * Math.PI * 2;
 
-    voices.push({
+    let notePinned = false, lenPinned = false, locked = false;
+    if (spec) {
+      if (spec.inst && INSTRUMENTS[spec.inst]) inst = spec.inst;
+      if (spec.note != null) { midi = spec.note; notePinned = true; }
+      locked = !!spec.lock;
+    }
+
+    const norm = clamp((midi - base) / 30, 0, 1); // 0 low .. 1 high
+    const pscale = 1 + (1 - norm) * 0.45;         // lower notes loop slower
+    let period = (minP + rPeriod * (maxP - minP)) * pscale * paceMult;
+    period += (rNudge - 0.5) * 1.7 + (i % 2 === 0 ? 0.37 : -0.29);
+    period = clamp(period, 3.5, 64);
+    if (spec && spec.len != null) { period = clamp(spec.len, 3.5, 64); lenPinned = true; }
+
+    const startTime = now - phase * period;
+    return {
       id: i,
       midi: midi,
       inst: inst,
@@ -448,8 +499,19 @@ AmbientEngine.prototype.regenerate = function (opts) {
       panBase: panBase, panDepth: panDepth, panRate: panRate, panPhase: panPhase,
       startTime: startTime,
       nextTime: startTime + period,
+      notePinned: notePinned, lenPinned: lenPinned, locked: locked,
       viz: { prev: phase, strike: -999, fx: null, nextFx: null },
-    });
+    };
+  };
+
+  // a hand-authored loom defines the field exactly; otherwise the seed rolls
+  // `density` generative voices as before.
+  const specs = parseVoices(p.voices);
+  const voices = [];
+  if (specs.length) {
+    for (let i = 0; i < specs.length; i++) voices.push(makeVoice(i, specs[i]));
+  } else {
+    for (let i = 0; i < n; i++) voices.push(makeVoice(i, null));
   }
   voices.sort(function (a, b) { return a.period - b.period; });
   voices.forEach(function (v, idx) { v.row = idx; });
@@ -1183,8 +1245,9 @@ AmbientEngine.prototype._evolveStep = function (now) {
     if (now < v._mutateAt) continue;
 
     // re-voice: step to a neighbouring scale tone (smooth voice-leading),
-    // occasionally leap further for a fresh colour
-    if (pool && pool.length) {
+    // occasionally leap further for a fresh colour. A locked + pinned note
+    // holds (the Atelier "spirit" rule); everything else still drifts.
+    if (pool && pool.length && !(v.locked && v.notePinned)) {
       const idx = pool.indexOf(v.midi);
       let nidx;
       if (idx >= 0 && Math.random() < 0.78) {
@@ -1197,8 +1260,9 @@ AmbientEngine.prototype._evolveStep = function (now) {
       v.midi = nm; v.freq = midiToFreq(nm, this.params.tuning); v.name = noteName(nm);
     }
 
-    // nudge the loop length, rebased so the playhead phase stays continuous
-    if (Math.random() < 0.55) {
+    // nudge the loop length, rebased so the playhead phase stays continuous.
+    // a locked + pinned length holds.
+    if (!(v.locked && v.lenPinned) && Math.random() < 0.55) {
       const ph = (((now - v.startTime) % v.period) + v.period) % v.period / v.period;
       let np = clamp(v.period * (1 + (Math.random() - 0.5) * 0.16), 3.5, 64);
       v.period = np;
@@ -1481,9 +1545,10 @@ AmbientEngine.prototype.set = function (key, value) {
   if (key === "texlevel") { this.setTextureLevel(value); return; }
   if (key === "looplevel") { this.setLoopLevel(value); return; }
   if (key === "texture") { this.setTextures(value ? value.split(".").filter(Boolean) : []); return; }
-  // mood / ensemble swap the whole palette -> dissolve across a crossfade;
-  // density/tempo/drift/register/seed stay instant so dials feel responsive
-  const cross = (key === "mood" || key === "ensemble");
+  // mood / ensemble / custom-scale swap the palette -> dissolve across a
+  // crossfade; density/tempo/drift/register/seed and per-voice loom edits
+  // stay instant so the controls feel responsive
+  const cross = (key === "mood" || key === "ensemble" || key === "key" || key === "scaleNotes");
   this.regenerate({ crossfade: cross });
 };
 

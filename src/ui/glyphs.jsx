@@ -86,6 +86,7 @@ export const MOOD_VIZ = {
   pensive:    { bg: ["#0b1320", "#05080f"], ink: "182,198,224", acc: "108,160,238" }, // soft blue
   open:       { bg: ["#091a18", "#040d0c"], ink: "182,216,208", acc: "92,214,198" },  // seafoam aqua
   vast:       { bg: ["#110c20", "#070510"], ink: "196,184,226", acc: "150,128,242" }, // aurora violet
+  custom:     { bg: ["#141414", "#070707"], ink: "206,206,206", acc: "212,176,120" }, // neutral graphite + warm brass (Atelier)
 };
 
 // ---- instrument glyphs (svg, for the DOM legend) ---------------------

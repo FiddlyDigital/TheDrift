@@ -60,10 +60,18 @@ export const TEXTURES = [
 ];
 
 // ---- persistence -----------------------------------------------------
-export const KEYS = ["mood", "ensemble", "density", "tempo", "drift", "register", "space", "color", "stutter", "bloom", "evolve", "journey", "glue", "tuning", "binaural", "binlevel", "texture", "texlevel", "looplevel", "seed"];
-export const STR_KEYS = { mood: "reflection", ensemble: "piano", binaural: "off", texture: "" };
-export const INT_KEYS = { density: true, seed: true };
-export const NUM_DEFAULTS = { density: 6, tempo: 0.5, drift: 0.55, register: 0.5, space: 0.6, color: 0.5, stutter: 0.15, bloom: 0.2, evolve: 0.4, journey: 0, glue: 0.25, tuning: 440, binlevel: 0.4, texlevel: 0.36, looplevel: 1, seed: 1148 };
+export const KEYS = ["mood", "ensemble", "density", "tempo", "drift", "register", "space", "color", "stutter", "bloom", "evolve", "journey", "glue", "tuning", "binaural", "binlevel", "texture", "texlevel", "looplevel", "seed", "key", "scaleNotes", "voices"];
+export const STR_KEYS = { mood: "reflection", ensemble: "piano", binaural: "off", texture: "", scaleNotes: "0.2.4.5.7.9.11", voices: "" };
+export const INT_KEYS = { density: true, seed: true, key: true };
+export const NUM_DEFAULTS = { density: 6, tempo: 0.5, drift: 0.55, register: 0.5, space: 0.6, color: 0.5, stutter: 0.15, bloom: 0.2, evolve: 0.4, journey: 0, glue: 0.25, tuning: 440, binlevel: 0.4, texlevel: 0.36, looplevel: 1, seed: 1148, key: 0 };
+
+// expert keys that ordinary (non-Atelier) drifts leave at default — omitted
+// from share links so normal URLs stay clean (see persist()).
+export const EXPERT_KEYS = ["key", "scaleNotes", "voices"];
+
+// re-exports for the Atelier UI
+export { SCALES, SCALE_ORDER, SCALE_NAMES } from '../engine/constants.js';
+export const NOTE_NAMES = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"];
 
 // ---- curated scenes: one tap sets the whole instrument ---------------
 // ordered as a calm -> alert gradient. Every preset holds a fixed mood

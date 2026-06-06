@@ -10,9 +10,33 @@ export const MOODS = {
   pensive:    { name: "Pensive",    root: 2,  notes: [0, 2, 3, 7, 10] },       // D minor with a thoughtful 9th
   open:       { name: "Open",       root: 0,  notes: [0, 2, 5, 7, 9] },        // C sus pentatonic, no thirds — spacious
   vast:       { name: "Vast",       root: 9,  notes: [0, 2, 7, 9, 11] },       // A fifth-rooted, luminous maj7 sky
+  // expert "Atelier" mode: root + notes come from params.key / params.scaleNotes
+  custom:     { name: "Custom",     root: 0,  notes: [0, 2, 4, 5, 7, 9, 11] }, // user-defined (fallback: C major)
 };
 
+// "custom" is intentionally absent — it never shows in the normal mood picker
 export const MOOD_ORDER = ["reflection", "drift", "dusk", "elegy", "suspended", "curious", "pensive", "open", "vast"];
+
+// ---- scales for expert mode: named id -> semitone degrees within an octave
+export const SCALES = {
+  major:      [0, 2, 4, 5, 7, 9, 11],
+  minor:      [0, 2, 3, 5, 7, 8, 10],
+  dorian:     [0, 2, 3, 5, 7, 9, 10],
+  phrygian:   [0, 1, 3, 5, 7, 8, 10],
+  lydian:     [0, 2, 4, 6, 7, 9, 11],
+  mixolydian: [0, 2, 4, 5, 7, 9, 10],
+  harmonic:   [0, 2, 3, 5, 7, 8, 11],   // harmonic minor
+  majpent:    [0, 2, 4, 7, 9],
+  minpent:    [0, 3, 5, 7, 10],
+  wholetone:  [0, 2, 4, 6, 8, 10],
+  chromatic:  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+};
+export const SCALE_NAMES = {
+  major: "Major", minor: "Minor", dorian: "Dorian", phrygian: "Phrygian",
+  lydian: "Lydian", mixolydian: "Mixolydian", harmonic: "Harmonic minor",
+  majpent: "Maj pentatonic", minpent: "Min pentatonic", wholetone: "Whole tone", chromatic: "Chromatic",
+};
+export const SCALE_ORDER = ["major", "minor", "dorian", "phrygian", "lydian", "mixolydian", "harmonic", "majpent", "minpent", "wholetone", "chromatic"];
 
 // ---- instruments (all synthesized) ---------------------------------
 // family drives the visual glyph; sustained voices swell within their loop.

@@ -1,5 +1,12 @@
-import { KEYS, STR_KEYS, INT_KEYS, NUM_DEFAULTS } from './constants.js';
+import { KEYS, STR_KEYS, INT_KEYS, NUM_DEFAULTS, EXPERT_KEYS } from './constants.js';
 import { MOODS, ENSEMBLES } from '../engine/constants.js';
+
+// an expert key is "in use" only when it differs from its default — used to
+// keep ordinary share links free of Atelier noise
+function expertActive(p, k) {
+  if (STR_KEYS[k] != null) return (p[k] || "") !== (STR_KEYS[k] || "");
+  return +p[k] !== NUM_DEFAULTS[k];
+}
 
 // ---- persistence -----------------------------------------------------
 export function readConfig() {
@@ -27,6 +34,8 @@ export function persist(p) {
   try { localStorage.setItem("loops.config", JSON.stringify(p)); } catch (e) {}
   const sp = new URLSearchParams();
   for (const k of KEYS) {
+    // skip default-valued expert keys so non-Atelier links stay clean
+    if (EXPERT_KEYS.indexOf(k) >= 0 && !expertActive(p, k)) continue;
     if (STR_KEYS[k] != null || INT_KEYS[k]) sp.set(k, p[k]);
     else sp.set(k, (+p[k]).toFixed(2));
   }

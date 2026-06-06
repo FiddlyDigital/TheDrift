@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ENGINE } from '../engine/index.js';
+import { ENGINE, parseScaleNotes, parseVoices } from '../engine/index.js';
 import {
   tempoLabel, stutterLabel, bloomLabel, driftLabel, registerLabel, spaceLabel,
   colorLabel, evolveLabel, journeyLabel, texlevelLabel, glueLabel, binlevelLabel, pctLabel,
@@ -12,6 +12,7 @@ import {
   DRIFT_POOL, DRIFT_SEG_MIN, DRIFT_SEG_MAX, EXPORT_OPTS,
   SLEEP_OPTS, SLEEP_FADE, WAKE_OPTS, WAKE_RISE,
   SESSION_OPTS, INTERVAL_OPTS, SESSION_DUCK,
+  SCALES, SCALE_ORDER, SCALE_NAMES, NOTE_NAMES,
 } from './constants.js';
 import { readConfig, persist, readLibrary, writeLibrary, snapshotName, uid } from './persistence.js';
 import {
@@ -19,6 +20,7 @@ import {
   FullscreenIcon, FullscreenExitIcon, VizIcon, ReturnIcon,
   SpeakerIcon, MoonIcon, BreathIcon, BellIcon, SlidersIcon,
   RouteIcon, InfoIcon, DownloadIcon, SunriseIcon, CloseIcon, SaveIcon, CubeIcon,
+  LockIcon, UnlockIcon, PlusIcon,
 } from './icons.jsx';
 import { drawGlyph, FAMILY_LABEL, MOOD_VIZ, GlyphSVG } from './glyphs.jsx';
 import { createRenderer } from './canvas.js';
@@ -209,6 +211,12 @@ export default function App() {
   useEffect(() => {
     try { localStorage.setItem("loops.section", section); } catch (e) {}
   }, [section]);
+  // hidden "Atelier" expert mode — unlocked by triple-tapping the title
+  const [expert, setExpert] = useState(() => {
+    try { return localStorage.getItem("loops.expert") === "1"; } catch (e) { return false; }
+  });
+  const [expertToast, setExpertToast] = useState(false);
+  const titleTapRef = useRef({ n: 0, t: 0 });
   const hideTimerRef = useRef(null);
   const wakeLockRef = useRef(null);
   const idleTimerRef = useRef(null);
@@ -1008,12 +1016,94 @@ export default function App() {
   const ensembleName = AE.ENSEMBLES && AE.ENSEMBLES[params.ensemble] ? AE.ENSEMBLES[params.ensemble].name : "";
   const texSet = new Set((params.texture || "").split(".").filter(Boolean));
 
+  // ---- Atelier (expert) helpers ----
+  const sections = expert ? SECTIONS.concat([{ id: "atelier", name: "Atelier" }]) : SECTIONS;
+  const INSTRUMENT_KEYS = Object.keys(AE.INSTRUMENTS || {});
+  const loomSpecs = parseVoices(params.voices);
+  const activeScaleNotes = parseScaleNotes(params.scaleNotes);
+  const noteLabel = (m) => NOTE_NAMES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1);
+
+  // unlock on three taps of the title within 600ms (main view only)
+  const unlockExpert = () => {
+    const now = Date.now();
+    const s = titleTapRef.current;
+    if (now - s.t > 600) s.n = 0;
+    s.n += 1; s.t = now;
+    if (s.n >= 3 && !expert) {
+      s.n = 0;
+      setExpert(true);
+      try { localStorage.setItem("loops.expert", "1"); } catch (e) {}
+      setExpertToast(true);
+      setTimeout(() => setExpertToast(false), 2400);
+    }
+  };
+
+  // the scale pool of MIDI notes available for the current key/mode/register
+  // (mirrors the engine's pool builder so the note picker offers valid tones)
+  const scalePool = () => {
+    const M = AE.MOODS[params.mood] || AE.MOODS.reflection;
+    let root = M.root, notes = M.notes;
+    if (params.mood === "custom") {
+      root = (((Math.round(params.key || 0)) % 12) + 12) % 12;
+      if (activeScaleNotes.length) notes = activeScaleNotes;
+    }
+    const base = Math.round(41 + params.register * 19);
+    const pool = [];
+    for (let oct = 0; oct < 3; oct++) for (const d of notes) { const m = base + root + d + 12 * oct; if (m <= base + 30) pool.push(m); }
+    pool.sort((a, b) => a - b);
+    return pool;
+  };
+
+  const ensureCustom = () => { if (params.mood !== "custom") update("mood", "custom"); };
+  const pickKey = (i) => { ensureCustom(); update("key", i); };
+  const pickScale = (id) => { ensureCustom(); update("scaleNotes", SCALES[id].join(".")); };
+  const toggleScaleNote = (deg) => {
+    ensureCustom();
+    const has = activeScaleNotes.indexOf(deg) >= 0;
+    const next = has ? activeScaleNotes.filter((d) => d !== deg) : activeScaleNotes.concat([deg]).sort((a, b) => a - b);
+    if (!next.length) return;            // a scale needs at least one note
+    update("scaleNotes", next.join("."));
+  };
+  const scaleMatches = (id) => {
+    const s = SCALES[id];
+    return s.length === activeScaleNotes.length && s.every((d, i) => d === activeScaleNotes[i]);
+  };
+
+  const encodeVoices = (arr) => arr.map((s) =>
+    (s.inst || "*") + ":" + (s.note == null ? "_" : s.note) + ":" + (s.len == null ? "_" : (+s.len).toFixed(1)) + ":" + (s.lock ? "1" : "0")
+  ).join(",");
+  const updateVoices = (arr) => update("voices", encodeVoices(arr));
+  const setVoiceField = (i, patch) => {
+    const arr = parseVoices(params.voices);
+    if (!arr[i]) return;
+    arr[i] = Object.assign({}, arr[i], patch);
+    updateVoices(arr);
+  };
+  const addVoice = () => {
+    const arr = parseVoices(params.voices);
+    if (arr.length >= 12) return;
+    const pool = scalePool();
+    const note = pool.length ? pool[Math.floor(pool.length / 2)] : 60;
+    arr.push({ inst: null, note: note, len: 12, lock: false });
+    updateVoices(arr);
+  };
+  const removeVoice = (i) => {
+    const arr = parseVoices(params.voices);
+    arr.splice(i, 1);
+    updateVoices(arr);
+  };
+  const captureField = () => {
+    const specs = ENGINE.voices.map((v) => ({ inst: v.inst, note: v.midi, len: +v.period.toFixed(1), lock: false }));
+    if (specs.length) updateVoices(specs);
+  };
+  const clearLoom = () => update("voices", "");
+
   return (
     <div className={"stage" + (immersive ? " immersive" : "") + (immersive && !vizUiVisible ? " hide-cursor" : "")}>
       <header className="head">
         <div className="head-left">
           <div className="eyebrow">Generative Ambient System</div>
-          <h1 className="title">The Drift<em>.</em></h1>
+          <h1 className="title" onClick={unlockExpert} title={expert ? "Atelier unlocked" : undefined}>The Drift<em>.</em></h1>
           <p className="subtitle">
             Unequal loops, each a single held note, drifting endlessly in and
             out of phase &mdash; so the music never repeats.
@@ -1054,11 +1144,11 @@ export default function App() {
 
       <div className="controls">
         <nav className="panel-tabs" role="tablist" aria-label="Control sections">
-          {SECTIONS.map((s) => (
+          {sections.map((s) => (
             <button key={s.id} role="tab" id={"tab-" + s.id}
               aria-selected={section === s.id}
               aria-controls={"panel-" + s.id}
-              className={"panel-tab" + (section === s.id ? " active" : "")}
+              className={"panel-tab" + (section === s.id ? " active" : "") + (s.id === "atelier" ? " atelier-tab" : "")}
               onClick={() => setSection(s.id)}>
               {s.name}
             </button>
@@ -1161,8 +1251,13 @@ export default function App() {
         {section === "motion" && (
           <div className="panel-body" role="tabpanel" id="panel-motion" aria-labelledby="tab-motion">
             <div className="dials">
-              <Dial name="Density" value={params.density} label={params.density + " loops"}
-                min={2} max={12} step={1} onChange={(v) => update("density", v)} />
+              {loomSpecs.length ? (
+                <Dial name="Density" value={loomSpecs.length} label={loomSpecs.length + " · in Atelier"}
+                  min={2} max={12} step={1} onChange={() => {}} />
+              ) : (
+                <Dial name="Density" value={params.density} label={params.density + " loops"}
+                  min={2} max={12} step={1} onChange={(v) => update("density", v)} />
+              )}
               <Dial name="Tempo" value={params.tempo} label={tempoLabel(params.tempo)}
                 min={0} max={1} step={0.01} onChange={(v) => update("tempo", v)} />
               <Dial name="Drift" value={params.drift} label={driftLabel(params.drift)}
@@ -1244,6 +1339,111 @@ export default function App() {
             </div>
           </div>
         )}
+
+        {section === "atelier" && expert && (
+          <div className="panel-body atelier" role="tabpanel" id="panel-atelier" aria-labelledby="tab-atelier">
+            <p className="atelier-intro">
+              Compose the ingredients by hand, then let them drift. Set a key and mode,
+              choose the notes, and build each loop&rsquo;s instrument, note and length.
+              Locked voices hold; the rest keep slowly roaming.
+            </p>
+
+            <div className="atelier-group">
+              <span className="row-label">Key</span>
+              <div className="key-row">
+                {NOTE_NAMES.map((nm, i) => (
+                  <button key={nm}
+                    className={"key-btn" + (params.mood === "custom" && ((Math.round(params.key || 0)) % 12 + 12) % 12 === i ? " active" : "")}
+                    onClick={() => pickKey(i)}>{nm}</button>
+                ))}
+              </div>
+            </div>
+
+            <div className="atelier-group">
+              <span className="row-label">Mode</span>
+              <div className="moods">
+                {SCALE_ORDER.map((id) => (
+                  <button key={id}
+                    className={"mood" + (params.mood === "custom" && scaleMatches(id) ? " active" : "")}
+                    onClick={() => pickScale(id)}>{SCALE_NAMES[id]}</button>
+                ))}
+              </div>
+            </div>
+
+            <div className="atelier-group">
+              <span className="row-label">Notes</span>
+              <div className="note-grid">
+                {NOTE_NAMES.map((nm, i) => (
+                  <button key={nm}
+                    className={"note-chip" + (params.mood === "custom" && activeScaleNotes.indexOf(i) >= 0 ? " active" : "") + (i === 0 ? " tonic" : "")}
+                    onClick={() => toggleScaleNote(i)}
+                    title={"degree " + i}>{nm}</button>
+                ))}
+              </div>
+              <p className="atelier-hint">Degrees from the key. The Mode buttons fill these; toggle to fine-tune.</p>
+            </div>
+
+            <div className="atelier-group">
+              <div className="loom-head">
+                <span className="row-label">Voices</span>
+                <div className="loom-actions">
+                  <button className="chip" onClick={captureField}>Capture field</button>
+                  {loomSpecs.length > 0 && <button className="chip" onClick={clearLoom}>Return to generative</button>}
+                </div>
+              </div>
+
+              {loomSpecs.length === 0 ? (
+                <p className="atelier-hint">
+                  The field is generative right now. <b>Capture field</b> to pin what you&rsquo;re hearing
+                  into editable loops, then tweak each one.
+                </p>
+              ) : (
+                <div className="loom">
+                  {loomSpecs.map((spec, i) => {
+                    let pool = scalePool();
+                    if (spec.note != null && pool.indexOf(spec.note) < 0) pool = [spec.note].concat(pool);
+                    return (
+                      <div className="loom-row" key={i}>
+                        <span className="loom-glyph"><GlyphSVG family={spec.inst && AE.INSTRUMENTS[spec.inst] ? AE.INSTRUMENTS[spec.inst].family : "piano"} /></span>
+                        <select className="loom-select" value={spec.inst || "*"}
+                          onChange={(e) => setVoiceField(i, { inst: e.target.value === "*" ? null : e.target.value })}>
+                          <option value="*">✱ random</option>
+                          {INSTRUMENT_KEYS.map((k) => (<option key={k} value={k}>{k}</option>))}
+                        </select>
+                        <select className="loom-select" value={spec.note == null ? "_" : String(spec.note)}
+                          onChange={(e) => setVoiceField(i, { note: e.target.value === "_" ? null : +e.target.value })}>
+                          <option value="_">roam</option>
+                          {pool.map((m) => (<option key={m} value={m}>{noteLabel(m)}</option>))}
+                        </select>
+                        <div className="loom-len">
+                          {spec.len == null ? (
+                            <button className="chip mini" onClick={() => setVoiceField(i, { len: 12 })}>length: roam</button>
+                          ) : (
+                            <>
+                              <input type="range" className="loom-range" min={3.5} max={48} step={0.5}
+                                value={spec.len} onChange={(e) => setVoiceField(i, { len: +e.target.value })} />
+                              <span className="loom-len-val">{(+spec.len).toFixed(1)}s</span>
+                              <button className="chip mini ghost" onClick={() => setVoiceField(i, { len: null })} title="let length roam">↺</button>
+                            </>
+                          )}
+                        </div>
+                        <button className={"loom-lock" + (spec.lock ? " on" : "")}
+                          onClick={() => setVoiceField(i, { lock: !spec.lock })}
+                          title={spec.lock ? "Locked — holds note & length" : "Unlocked — slowly roams"}>
+                          {spec.lock ? <LockIcon /> : <UnlockIcon />}
+                        </button>
+                        <button className="loom-remove" onClick={() => removeVoice(i)} aria-label="Remove voice"><CloseIcon /></button>
+                      </div>
+                    );
+                  })}
+                  {loomSpecs.length < 12 && (
+                    <button className="loom-add" onClick={addVoice}><PlusIcon /> Add voice</button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <footer className="footer">
@@ -1259,6 +1459,7 @@ export default function App() {
         <div className="footer-right">
           <span className={"toast" + (savedToast ? " show" : "")}>kept in your library</span>
           <span className={"toast" + (copied ? " show" : "")}>link copied</span>
+          <span className={"toast" + (expertToast ? " show" : "")}>Atelier unlocked &mdash; see the new tab</span>
           {installPrompt && (
             <button className="ghost-btn" onClick={install}><InstallIcon /> Install app</button>
           )}

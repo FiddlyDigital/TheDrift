@@ -116,3 +116,20 @@ export const SaveIcon = () => (
     <path d="M7 4.5h10a1 1 0 0 1 1 1V20l-6-3.4L6 20V5.5a1 1 0 0 1 1-1z" />
   </svg>
 );
+export const LockIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
+    <rect x="5.5" y="10.5" width="13" height="9" rx="1.6" />
+    <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+  </svg>
+);
+export const UnlockIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
+    <rect x="5.5" y="10.5" width="13" height="9" rx="1.6" />
+    <path d="M8 10.5V8a4 4 0 0 1 7.7-2.1" />
+  </svg>
+);
+export const PlusIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+    <path d="M12 5v14M5 12h14" />
+  </svg>
+);

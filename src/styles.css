@@ -1154,3 +1154,78 @@ body {
   .ghost-btn { padding: 12px 16px; }
   .seed-input { padding: 8px 2px; }
 }
+
+/* ---- Atelier (hidden expert mode) ---- */
+.panel-tab.atelier-tab.active { border-bottom-color: var(--accent); }
+.panel-tab.atelier-tab::before {
+  content: "✦"; font-size: 9px; margin-right: 5px; color: var(--accent); opacity: 0.8;
+}
+.atelier-intro {
+  font-family: var(--serif); font-style: italic; font-size: 14px;
+  color: var(--ink-2); line-height: 1.55; margin: 0 0 18px; max-width: 60ch;
+}
+.atelier-group { margin-bottom: 20px; }
+.atelier-hint {
+  font-family: var(--mono); font-size: 10.5px; color: var(--ink-3);
+  letter-spacing: 0.02em; line-height: 1.5; margin: 8px 0 0;
+}
+.atelier-group > .row-label { display: block; width: auto; margin-bottom: 9px; }
+
+.key-row { display: flex; gap: 5px; flex-wrap: wrap; }
+.key-btn {
+  font-family: var(--mono); font-size: 12px; min-width: 34px;
+  background: transparent; border: 1px solid var(--ink-line); color: var(--ink-2);
+  padding: 7px 6px; border-radius: 2px; cursor: pointer; transition: all .2s ease;
+}
+.key-btn:hover { border-color: var(--ink-3); color: var(--ink); }
+.key-btn.active { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+
+.note-grid { display: flex; gap: 5px; flex-wrap: wrap; }
+.note-chip {
+  font-family: var(--mono); font-size: 11px; min-width: 32px;
+  background: transparent; border: 1px solid var(--ink-line); color: var(--ink-3);
+  padding: 6px 5px; border-radius: 2px; cursor: pointer; transition: all .2s ease;
+}
+.note-chip:hover { border-color: var(--ink-3); color: var(--ink); }
+.note-chip.active { background: var(--accent); border-color: var(--accent); color: var(--paper); }
+.note-chip.tonic { box-shadow: inset 0 -2px 0 var(--accent); }
+.note-chip.tonic.active { box-shadow: inset 0 -2px 0 rgba(255,255,255,0.5); }
+
+.loom-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.loom-head .row-label { width: auto; margin: 0; }
+.loom-actions { display: flex; gap: 7px; }
+.loom { display: flex; flex-direction: column; gap: 7px; }
+.loom-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 8px; border: 1px solid var(--ink-line); border-radius: 3px;
+  background: rgba(44, 39, 26, 0.02);
+}
+.loom-glyph { flex: none; width: 14px; height: 14px; opacity: 0.85; display: inline-flex; }
+.loom-select {
+  font-family: var(--mono); font-size: 11px; color: var(--ink);
+  background: var(--paper); border: 1px solid var(--ink-line); border-radius: 2px;
+  padding: 4px 5px; cursor: pointer; max-width: 110px;
+}
+.loom-select:first-of-type { min-width: 86px; }
+.loom-len { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 120px; }
+.loom-range { flex: 1; accent-color: var(--accent); cursor: pointer; min-width: 60px; }
+.loom-len-val { font-family: var(--mono); font-size: 10.5px; color: var(--ink-2); min-width: 34px; }
+.chip.mini { padding: 4px 8px; font-size: 10px; }
+.chip.mini.ghost { border-color: transparent; opacity: 0.6; padding: 4px 6px; }
+.chip.mini.ghost:hover { opacity: 1; border-color: var(--ink-line); }
+.loom-lock, .loom-remove {
+  flex: none; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; border: 1px solid var(--ink-line); border-radius: 2px;
+  color: var(--ink-3); cursor: pointer; transition: all .2s ease; padding: 0;
+}
+.loom-lock svg, .loom-remove svg { width: 15px; height: 15px; }
+.loom-lock:hover, .loom-remove:hover { color: var(--ink); border-color: var(--ink-3); }
+.loom-lock.on { color: var(--accent); border-color: var(--accent); }
+.loom-add {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.05em;
+  display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+  background: transparent; border: 1px dashed var(--ink-line); color: var(--ink-2);
+  padding: 8px 13px; border-radius: 2px; cursor: pointer; transition: all .2s ease; margin-top: 3px;
+}
+.loom-add svg { width: 14px; height: 14px; }
+.loom-add:hover { border-color: var(--accent); color: var(--accent); }
