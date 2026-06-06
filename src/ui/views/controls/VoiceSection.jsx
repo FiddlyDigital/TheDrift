@@ -2,6 +2,7 @@ import React from 'react';
 import { ENGINE } from '../../../engine/index.js';
 import { useDriftStore } from '../../store/useDriftStore.js';
 import { TUNINGS } from '../../constants.js';
+import { ChipGroup } from './ChipGroup.jsx';
 
 // Mood, ensemble and concert tuning.
 export function VoiceSection() {
@@ -11,46 +12,19 @@ export function VoiceSection() {
 
   return (
     <div className="panel-body" role="tabpanel" id="panel-voice" aria-labelledby="tab-voice">
-      <div className="mood-row">
-        <span className="row-label">Mood</span>
-        <div className="moods">
-          {AE.MOOD_ORDER.map((m) => (
-            <button key={m}
-              className={"mood" + (params.mood === m ? " active" : "")}
-              onClick={() => update("mood", m)}>
-              {AE.MOODS[m].name}
-            </button>
-          ))}
-        </div>
-      </div>
+      <ChipGroup label="Mood" options={AE.MOOD_ORDER} getKey={(m) => m}
+        isActive={(m) => params.mood === m} onPick={(m) => update("mood", m)}
+        renderOption={(m) => AE.MOODS[m].name} />
 
-      <div className="mood-row">
-        <span className="row-label">Ensemble</span>
-        <div className="moods">
-          {AE.ENSEMBLE_ORDER.map((m) => (
-            <button key={m}
-              className={"mood" + (params.ensemble === m ? " active" : "")}
-              onClick={() => update("ensemble", m)}>
-              {AE.ENSEMBLES[m].name}
-            </button>
-          ))}
-        </div>
-      </div>
+      <ChipGroup label="Ensemble" options={AE.ENSEMBLE_ORDER} getKey={(m) => m}
+        isActive={(m) => params.ensemble === m} onPick={(m) => update("ensemble", m)}
+        renderOption={(m) => AE.ENSEMBLES[m].name} />
 
-      <div className="mood-row">
-        <span className="row-label">Tuning</span>
-        <div className="moods tunings">
-          {TUNINGS.map((t) => (
-            <button key={t.hz}
-              className={"tuning-opt" + (params.tuning === t.hz ? " active" : "")}
-              onClick={() => update("tuning", t.hz)}
-              title={t.title}>
-              <span className="tuning-hz">{t.name}</span>
-              <span className="tuning-note">{t.note}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+      <ChipGroup label="Tuning" options={TUNINGS} getKey={(t) => t.hz}
+        containerClass="moods tunings" buttonClass="tuning-opt"
+        isActive={(t) => params.tuning === t.hz} onPick={(t) => update("tuning", t.hz)}
+        getTitle={(t) => t.title}
+        renderOption={(t) => (<><span className="tuning-hz">{t.name}</span><span className="tuning-note">{t.note}</span></>)} />
     </div>
   );
 }

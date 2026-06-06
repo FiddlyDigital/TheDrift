@@ -1,6 +1,7 @@
 import React from 'react';
 import { useDriftStore } from '../../store/useDriftStore.js';
 import { TEXTURES, BRAINWAVES } from '../../constants.js';
+import { ChipGroup } from './ChipGroup.jsx';
 
 // Ambience texture bed (multi-select) and binaural brainwave layer.
 export function AtmosphereSection() {
@@ -11,36 +12,19 @@ export function AtmosphereSection() {
 
   return (
     <div className="panel-body" role="tabpanel" id="panel-atmos" aria-labelledby="tab-atmos">
-      <div className="mood-row">
-        <span className="row-label">Ambience</span>
-        <div className="moods">
-          {TEXTURES.map((t) => (
-            <button key={t.id}
-              className={"mood" + (texSet.has(t.id) ? " active" : "")}
-              onClick={() => toggleTexture(t.id)}>
-              {t.name}
-            </button>
-          ))}
-        </div>
-      </div>
+      <ChipGroup label="Ambience" options={TEXTURES} getKey={(t) => t.id}
+        isActive={(t) => texSet.has(t.id)} onPick={(t) => toggleTexture(t.id)}
+        renderOption={(t) => t.name} />
 
-      <div className="mood-row">
-        <span className="row-label">Brainwaves</span>
-        <div className="moods">
-          {BRAINWAVES.map((b) => (
-            <button key={b.id}
-              className={"mood" + (params.binaural === b.id ? " active" : "")}
-              onClick={() => update("binaural", b.id)}
-              title={b.hz ? b.hz + " · " + b.note : "Binaural beats off"}>
-              {b.name}
-            </button>
-          ))}
-          {params.binaural !== "off" && (() => {
-            const b = BRAINWAVES.find((x) => x.id === params.binaural);
-            return b ? <span className="bin-note">{b.hz} &middot; {b.note} &middot; headphones</span> : null;
-          })()}
-        </div>
-      </div>
+      <ChipGroup label="Brainwaves" options={BRAINWAVES} getKey={(b) => b.id}
+        isActive={(b) => params.binaural === b.id} onPick={(b) => update("binaural", b.id)}
+        getTitle={(b) => b.hz ? b.hz + " · " + b.note : "Binaural beats off"}
+        renderOption={(b) => b.name}>
+        {params.binaural !== "off" && (() => {
+          const b = BRAINWAVES.find((x) => x.id === params.binaural);
+          return b ? <span className="bin-note">{b.hz} &middot; {b.note} &middot; headphones</span> : null;
+        })()}
+      </ChipGroup>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useDriftStore } from '../../store/useDriftStore.js';
 import { SCENES } from '../../constants.js';
+import { ChipGroup } from './ChipGroup.jsx';
 
 // Curated scenes + the listener's saved "Yours" library (recall / rename / delete).
 export function ScenesSection() {
@@ -16,18 +17,9 @@ export function ScenesSection() {
 
   return (
     <div className="panel-body" role="tabpanel" id="panel-scenes" aria-labelledby="tab-scenes">
-      <div className="mood-row">
-        <span className="row-label">Scene</span>
-        <div className="moods">
-          {SCENES.map((sc) => (
-            <button key={sc.name}
-              className={"mood" + (activeScene === sc.name ? " active" : "")}
-              onClick={() => applyScene(sc)}>
-              {sc.name}
-            </button>
-          ))}
-        </div>
-      </div>
+      <ChipGroup label="Scene" options={SCENES} getKey={(sc) => sc.name}
+        isActive={(sc) => activeScene === sc.name} onPick={(sc) => applyScene(sc)}
+        renderOption={(sc) => sc.name} />
 
       <div className="mood-row">
         <span className="row-label">Yours</span>
