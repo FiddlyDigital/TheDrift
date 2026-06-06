@@ -227,14 +227,50 @@ instrument while preserving the drift model.
 - **Per-voice lock.** A locked voice holds its pinned note and length;
   everything unlocked keeps slowly evolving, and stereo/timbre always drift.
   Authored voices still loop and phase-drift like every other voice.
-- **MIDI control (Web MIDI).** External controllers can drive the instrument.
-  A MIDI-learn flow binds any knob/fader to a control (Density, Tempo, Drift,
-  Register, Space, Color, Bloom, Stutter, Evolve, Journey, Glue, the mixer
-  levels, master volume) and any button/key to transport (Play/Pause, Start,
-  Stop) or scene changes (next/previous, reshuffle). Bindings are saved
-  locally. Requires a browser with Web MIDI support (Chromium-based).
 
 Atelier creations are encoded in the share URL like any other state.
+
+### MIDI control (Web MIDI)
+
+External MIDI controllers can drive the instrument, so it can be played with
+physical knobs, faders, and buttons. Mapping uses a **MIDI-learn** flow: enable
+MIDI, click **Learn** on a control, then move a knob or press a key on the
+controller — the next message binds to that control. Bindings are saved in the
+browser and reconnect automatically on the next visit; devices can be added or
+removed while running.
+
+**Continuous controls** (bind to a Control-Change message; the CC value 0–127 is
+scaled to the control's range, and the on-screen dial moves with the hardware):
+
+- Density
+- Tempo
+- Drift
+- Register
+- Space
+- Color
+- Bloom
+- Stutter
+- Evolve
+- Journey
+- Glue
+- Loops level
+- Ambience level
+- Master volume
+
+**Transport and actions** (bind to a Control-Change or a Note; triggered on
+button press / note-on):
+
+- Play / Pause (toggle)
+- Start
+- Stop
+- Next scene
+- Previous scene
+- Reshuffle (new seed)
+
+A control change moves the same parameter the on-screen dial does, so hardware
+and UI stay in sync. Requires a browser with Web MIDI support (Chromium-based:
+Chrome, Edge, Opera); other browsers show a "not supported" notice. Sysex is not
+requested.
 
 ---
 
