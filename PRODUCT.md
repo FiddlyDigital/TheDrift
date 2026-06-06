@@ -138,7 +138,7 @@ crossfade).
 | Journey | 0–1 | Autonomous mood-migration rate (0 = off) |
 | Glue | 0–1 | Master compression amount |
 | Tuning | 5 options | A4 reference pitch |
-| Binaural | 5 options | Binaural-beat band |
+| Binaural | 6 options | Binaural-beat band |
 | Beat level | 0–1 | Binaural tone level |
 | Texture | multi-select | Active ambience layers |
 | Ambience level | 0–1 | Ambience bed level |
@@ -195,7 +195,9 @@ Fire, Static, Tape hiss, White noise, Pink noise, Brown noise.**
 
 Two pure sine tones, one isolated to each ear, kept dry and channel-isolated so
 the perceived beat survives. Bands: **Delta (2.5 Hz), Theta (6 Hz), Alpha
-(10 Hz), Beta (18 Hz)**, plus Off. Effective only on headphones.
+(10 Hz), Beta (18 Hz), Gamma (40 Hz)**, plus Off. Gamma is a dedicated "task
+anchor" — a fast pulse in the gamma range associated with focused attention,
+kept subtle via the Beat level. Effective only on headphones.
 
 ### Tuning
 
@@ -210,10 +212,13 @@ Unlocked by triple-tapping the title on the main view; remembered per device. It
 adds an **Atelier** panel that turns the generator into a hand-authored
 instrument while preserving the drift model.
 
-- **Custom harmony.** Pick a **key** (12 chromatic roots), a **mode** (Major,
-  Minor, Dorian, Phrygian, Lydian, Mixolydian, Harmonic minor, two pentatonics,
-  Whole tone, Chromatic), and toggle individual scale **degrees** on a 12-note
-  grid. This feeds the same field builder the named moods use.
+- **Custom harmony.** Pick a **key** (12 chromatic roots), a **mode** (24
+  scales: the seven diatonic modes, harmonic and melodic minor, dominant and
+  exotic seven-note scales such as Phrygian dominant, Lydian dominant, Harmonic
+  major and Byzantine, pentatonics, blues, Japanese and other world scales, the
+  symmetric whole-tone/diminished/augmented scales, and chromatic), and toggle
+  individual scale **degrees** on a 12-note grid. This feeds the same field
+  builder the named moods use.
 - **Voice loom.** A per-loop editor. **Capture field** snapshots the playing
   voices into editable rows. Each row sets the **instrument** (any of the 22, or
   random), the **note** (a scale tone, or "roam" = generative), and the **loop

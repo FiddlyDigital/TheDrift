@@ -19,24 +19,51 @@ export const MOOD_ORDER = ["reflection", "drift", "dusk", "elegy", "suspended", 
 
 // ---- scales for expert mode: named id -> semitone degrees within an octave
 export const SCALES = {
+  // diatonic modes
   major:      [0, 2, 4, 5, 7, 9, 11],
-  minor:      [0, 2, 3, 5, 7, 8, 10],
+  minor:      [0, 2, 3, 5, 7, 8, 10],   // aeolian
   dorian:     [0, 2, 3, 5, 7, 9, 10],
   phrygian:   [0, 1, 3, 5, 7, 8, 10],
   lydian:     [0, 2, 4, 6, 7, 9, 11],
   mixolydian: [0, 2, 4, 5, 7, 9, 10],
+  locrian:    [0, 1, 3, 5, 6, 8, 10],
+  // minor variants + dominant/exotic seven-note scales
   harmonic:   [0, 2, 3, 5, 7, 8, 11],   // harmonic minor
+  melodic:    [0, 2, 3, 5, 7, 9, 11],   // melodic minor (ascending)
+  phrygdom:   [0, 1, 4, 5, 7, 8, 10],   // phrygian dominant (Spanish)
+  lyddom:     [0, 2, 4, 6, 7, 9, 10],   // lydian dominant (acoustic)
+  harmajor:   [0, 2, 4, 5, 7, 8, 11],   // harmonic major
+  byzantine:  [0, 1, 4, 5, 7, 8, 11],   // double harmonic major
+  // pentatonic + world
   majpent:    [0, 2, 4, 7, 9],
   minpent:    [0, 3, 5, 7, 10],
+  blues:      [0, 3, 5, 6, 7, 10],      // minor blues (6-note)
+  majblues:   [0, 2, 3, 4, 7, 9],       // major blues (6-note)
+  hirajoshi:  [0, 2, 3, 7, 8],          // Japanese
+  insen:      [0, 1, 5, 7, 10],         // Japanese
+  egyptian:   [0, 2, 5, 7, 10],         // suspended pentatonic
+  // symmetric
   wholetone:  [0, 2, 4, 6, 8, 10],
+  diminished: [0, 2, 3, 5, 6, 8, 9, 11], // whole-half octatonic
+  augmented:  [0, 3, 4, 7, 8, 11],
   chromatic:  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
 };
 export const SCALE_NAMES = {
   major: "Major", minor: "Minor", dorian: "Dorian", phrygian: "Phrygian",
-  lydian: "Lydian", mixolydian: "Mixolydian", harmonic: "Harmonic minor",
-  majpent: "Maj pentatonic", minpent: "Min pentatonic", wholetone: "Whole tone", chromatic: "Chromatic",
+  lydian: "Lydian", mixolydian: "Mixolydian", locrian: "Locrian",
+  harmonic: "Harmonic minor", melodic: "Melodic minor",
+  phrygdom: "Phrygian dom.", lyddom: "Lydian dom.", harmajor: "Harmonic major",
+  byzantine: "Byzantine", majpent: "Maj pentatonic", minpent: "Min pentatonic",
+  blues: "Blues", majblues: "Major blues", hirajoshi: "Hirajoshi",
+  insen: "In-sen", egyptian: "Egyptian", wholetone: "Whole tone",
+  diminished: "Diminished", augmented: "Augmented", chromatic: "Chromatic",
 };
-export const SCALE_ORDER = ["major", "minor", "dorian", "phrygian", "lydian", "mixolydian", "harmonic", "majpent", "minpent", "wholetone", "chromatic"];
+export const SCALE_ORDER = [
+  "major", "minor", "dorian", "phrygian", "lydian", "mixolydian", "locrian",
+  "harmonic", "melodic", "phrygdom", "lyddom", "harmajor", "byzantine",
+  "majpent", "minpent", "blues", "majblues", "hirajoshi", "insen", "egyptian",
+  "wholetone", "diminished", "augmented", "chromatic",
+];
 
 // ---- instruments (all synthesized) ---------------------------------
 // family drives the visual glyph; sustained voices swell within their loop.
@@ -165,5 +192,5 @@ export const ENSEMBLE_ORDER = ["piano", "glasswork", "handpan", "percussion", "w
 // between them is perceived (only on headphones) as a slow "beat" whose
 // rate falls in a classic brainwave band. Kept dry & channel-isolated so
 // the binaural effect survives intact. Values are the beat rate in Hz.
-export const BINAURAL = { off: 0, delta: 2.5, theta: 6.0, alpha: 10.0, beta: 18.0 };
+export const BINAURAL = { off: 0, delta: 2.5, theta: 6.0, alpha: 10.0, beta: 18.0, gamma: 40.0 };
 export const BIN_CARRIER = 128; // soft low carrier the beat rides on

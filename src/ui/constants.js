@@ -7,6 +7,7 @@ export const BRAINWAVES = [
   { id: "theta", name: "Theta", hz: "6 Hz",   note: "meditation" },
   { id: "alpha", name: "Alpha", hz: "10 Hz",  note: "calm focus" },
   { id: "beta",  name: "Beta",  hz: "18 Hz",  note: "alert focus" },
+  { id: "gamma", name: "Gamma", hz: "40 Hz",  note: "task anchor" },
 ];
 
 // ---- breath synchronization patterns ---------------------------------
