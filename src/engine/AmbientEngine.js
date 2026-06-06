@@ -19,6 +19,28 @@ export function parseScaleNotes(str) {
   out.sort(function (a, b) { return a - b; });
   return out;
 }
+// the scale-tone pool for a given mood/key/mode/register: register sets the
+// lowest octave, then a 3-octave pool of scale tones is built. Shared by the
+// voice generator and the Atelier note picker so they can never disagree.
+export function buildScalePool(p) {
+  const mood = MOODS[p.mood] || MOODS.reflection;
+  let root = mood.root, notes = mood.notes;
+  if (p.mood === "custom") {
+    root = (((Math.round(p.key || 0)) % 12) + 12) % 12;
+    const cn = parseScaleNotes(p.scaleNotes);
+    if (cn.length) notes = cn;
+  }
+  const base = Math.round(41 + p.register * 19); // F2(41)..C4(60)
+  const pool = [];
+  for (let oct = 0; oct < 3; oct++) {
+    for (const d of notes) {
+      const m = base + root + d + 12 * oct;
+      if (m <= base + 30) pool.push(m);
+    }
+  }
+  pool.sort(function (a, b) { return a - b; });
+  return { base, pool };
+}
 // voice specs "inst:note:len:lock" joined by "," -> [{inst,note,len,lock}]
 // inst "*" = random from ensemble; note/len "_" = generative (roam)
 export function parseVoices(str) {
@@ -433,24 +455,9 @@ AmbientEngine.prototype.regenerate = function (opts) {
   const instPool = ensemble.pool;
   const n = clamp(Math.round(p.density), 2, 12);
 
-  // expert "Atelier": custom key + scale override the mood's root/notes
-  let moodRoot = mood.root, moodNotes = mood.notes;
-  if (p.mood === "custom") {
-    moodRoot = (((Math.round(p.key || 0)) % 12) + 12) % 12;
-    const cn = parseScaleNotes(p.scaleNotes);
-    if (cn.length) moodNotes = cn;
-  }
-
-  // register sets the lowest octave; build a 3-octave pool of scale tones
-  const base = Math.round(41 + p.register * 19); // F2(41)..C4(60)
-  const pool = [];
-  for (let oct = 0; oct < 3; oct++) {
-    for (const d of moodNotes) {
-      const m = base + moodRoot + d + 12 * oct;
-      if (m <= base + 30) pool.push(m);
-    }
-  }
-  pool.sort(function (a, b) { return a - b; });
+  // expert "Atelier": custom key + scale override the mood's root/notes;
+  // build the 3-octave scale-tone pool (and its low base) for this field
+  const { base, pool } = buildScalePool(p);
 
   // length spread: tight -> all loops similar; wide -> very unequal
   const spread = p.drift;

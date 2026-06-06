@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseScaleNotes, parseVoices } from '../AmbientEngine.js';
+import { parseScaleNotes, parseVoices, buildScalePool } from '../AmbientEngine.js';
 import { SCALES } from '../constants.js';
 
 describe('parseScaleNotes', () => {
@@ -52,25 +52,20 @@ describe('parseVoices', () => {
   });
 });
 
-describe('custom scale pool', () => {
-  // mirrors the engine's pool builder for a known key + scale
-  function pool(rootPc, notes, register) {
-    const base = Math.round(41 + register * 19);
-    const out = [];
-    for (let oct = 0; oct < 3; oct++) for (const d of notes) {
-      const m = base + rootPc + d + 12 * oct;
-      if (m <= base + 30) out.push(m);
-    }
-    out.sort((a, b) => a - b);
-    return out;
-  }
+describe('buildScalePool', () => {
   it('builds D dorian from key + scale at register 0.5', () => {
-    const base = Math.round(41 + 0.5 * 19); // 50 (D3)
-    const p = pool(2, SCALES.dorian, 0.5);
-    expect(p[0]).toBe(base + 2);           // D
-    expect(p.every((m) => m <= base + 30)).toBe(true);
+    const { base, pool } = buildScalePool({ mood: 'custom', key: 2, scaleNotes: SCALES.dorian.join('.'), register: 0.5 });
+    expect(base).toBe(51);                  // round(41 + 0.5*19)
+    expect(pool[0]).toBe(base + 2);         // D
+    expect(pool.every((m) => m <= base + 30)).toBe(true);
     // all pitch classes are within D dorian
-    const pcs = new Set(p.map((m) => ((m - (base + 2)) % 12 + 12) % 12));
+    const pcs = new Set(pool.map((m) => ((m - (base + 2)) % 12 + 12) % 12));
     for (const pc of pcs) expect(SCALES.dorian.indexOf(pc)).toBeGreaterThanOrEqual(0);
+  });
+  it('uses the mood root/notes for a non-custom mood', () => {
+    const { base, pool } = buildScalePool({ mood: 'reflection', register: 0.5 });
+    expect(base).toBe(51);
+    expect(pool.length).toBeGreaterThan(0);
+    expect(pool.every((m) => m <= base + 30)).toBe(true);
   });
 });

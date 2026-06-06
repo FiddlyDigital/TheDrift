@@ -1,4 +1,5 @@
 import { ENGINE } from '../engine/index.js';
+import { NOTE_NAMES } from './constants.js';
 
 // clock: seconds -> "m:ss"
 export function fmt(s) {
@@ -27,4 +28,9 @@ export function moodName(params) {
 export function ensembleName(params) {
   const AE = ENGINE.constructor;
   return AE.ENSEMBLES && AE.ENSEMBLES[params.ensemble] ? AE.ENSEMBLES[params.ensemble].name : "";
+}
+
+// MIDI note number -> name + octave, e.g. 60 -> "C4"
+export function noteLabel(m) {
+  return NOTE_NAMES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1);
 }
