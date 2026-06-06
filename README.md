@@ -2,7 +2,9 @@
 
 **Live site: [fiddlydigital.github.io/TheDrift](https://fiddlydigital.github.io/TheDrift/)**
 
-A generative ambient music system. Multiple loops, each a single synthesized note on its own irrational length, drift endlessly in and out of phase — so the music never repeats.
+A generative ambient music instrument that runs entirely in the browser. Multiple loops, each a single synthesized note on its own irrational length, drift endlessly in and out of phase — so the music never repeats. All sound is synthesized with the Web Audio API (no samples), there is no server or account, and it works offline as a PWA.
+
+For an exhaustive, non-developer feature description and the problem it solves, see **[PRODUCT.md](./PRODUCT.md)**.
 
 ---
 
@@ -11,20 +13,12 @@ A generative ambient music system. Multiple loops, each a single synthesized not
 **Prerequisites:** Node.js 18+
 
 ```bash
-# Install dependencies
-npm install
-
-# Start the dev server (hot reload)
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview the production build locally
-npm run preview
+npm install        # install dependencies
+npm run dev        # dev server with hot reload (http://localhost:5173)
+npm run build      # production build -> dist/
+npm run preview    # preview the production build
+npm test           # run the unit tests (Vitest)
 ```
-
-The dev server runs at `http://localhost:5173` by default.
 
 ---
 
@@ -37,25 +31,28 @@ npm run build
 Output goes to `dist/`. The bundle is:
 
 - **Minified** via Terser (2-pass, console stripped)
-- **Obfuscated** via `javascript-obfuscator` (hex identifiers, string array shuffling)
-- ~496 KB JS / ~131 KB gzip
+- **Obfuscated** via `vite-plugin-obfuscator` (hex identifiers, string-array shuffling)
+- ~560 KB JS / ~147 KB gzip
 
-Deploy the contents of `dist/` to any static host (Netlify, Vercel, GitHub Pages, S3, etc.).
+Deploy the contents of `dist/` to any static host. Pushing to `main` runs the
+CI/CD pipeline (tests → build → deploy to GitHub Pages).
 
 ---
 
 ## Features
 
 ### Sound engine
-- **Synthesized instruments** — all audio generated in the browser via the Web Audio API, no samples required:
-  - Felt Piano, Bells/Glasswork, Marimba, Harp, Handpan, Kalimba, Woodblock, Frame Drum
+- **Synthesized instruments (22)** — all audio generated in the browser via the Web Audio API, no samples:
+  - Felt Piano, Bell, Marimba, Harp, Handpan, Kalimba, Woodblock, Frame Drum (struck)
   - Strings, Choir, Flute, Drone (sustained/bowed)
   - Tabla, Balafon, Udu, Singing Bowl (world percussion)
   - 8-bit Pulse Lead, Blip, Triangle Bass (chiptune)
-- **Ensembles** — curated instrument pools: Felt Piano, Glasswork, Handpan, Percussion, World, 8-Bit, Strings, Choir, Orchestra (random mix)
+  - Arpeggio, Birdsong, Trill (**Glitch** — multi-note gestures fired per strike)
+- **Ensembles (10)** — curated instrument pools: Felt Piano, Glasswork, Handpan, Percussion, World, 8-Bit, Glitch, Strings, Choir, Orchestra (random mix)
 - **Generated reverb** — exponentially-decaying noise convolver, length tied to the Space dial
-- **Binaural beats** — Delta / Theta / Alpha / Beta bands, isolated L/R via channel merger (use headphones)
+- **Binaural beats** — Delta / Theta / Alpha / Beta / **Gamma (40 Hz, "task anchor")** bands, channel-isolated L/R (use headphones)
 - **Ambience bed** — synthesized layers: Rain, Vinyl, Wind, Fire, Static, Tape hiss, White / Pink / Brown noise
+- **Master chain** — dry/reverb split → warmth lowpass → compressor (Glue) → automatic loudness leveler → limiter
 
 ### Generative system
 - **Unequal loop lengths** — irrational period nudges ensure loops never fall into clean ratios, producing ever-changing phase relationships
@@ -81,28 +78,41 @@ Reflection · Drift · Dusk · Elegy · Suspended · Curious · Pensive · Open 
 | Journey | Autonomous mood migration speed |
 | Glue | Output compression (transparent ↔ pumping) |
 
-### Curated scenes
-One-tap presets that configure the whole instrument: Deep Rest · Stillness · Inner Sun · Tide · Clear Mind · Quickening · Arcade Dusk · Procession · Reverie
+Plus a Mixer (Master, Loops, Ambience, Beat, Glue) and a 3D-audio toggle.
 
-### Programmed journeys
-Timed arcs that travel between scenes with smooth crossfades: Into Sleep · Deep Focus · Unwind
+### Curated scenes (11)
+One-tap presets that configure the whole instrument, ordered calm → alert:
+Deep Rest · Stillness · Tide · Inner Sun · Clear Mind · Reverie · Procession · Arcade Dusk · Daybreak · Quickening · Murmuration
 
-### Meditation tools
+### Programmed journeys (4)
+Timed arcs that travel between scenes with smooth crossfades: Into Sleep · Deep Focus · Sunrise · Unwind. An open-ended **Endless Drift** wanders indefinitely.
+
+### Meditation & sleep tools
 - **Session timer** — timed sit with opening/closing singing-bowl bells and configurable interval bells
 - **Sleep timer** — auto-fade to silence after a set duration
 - **Wake / sunrise timer** — starts silent and rises slowly from inaudible to full
-- **Breath guide** — animated ring paced to Coherent (5.5/min), Box (4-4-4-4), or 4-7-8 breathing patterns
-- **Tuning** — A4 reference: 415 Hz (baroque) · 432 Hz (natural) · 440 Hz (concert) · 444 Hz (C=528 Hz) · 448 Hz
+- **Breath guide** — animated ring paced to Coherent (5.5/min), Box (4-4-4-4), or 4-7-8 patterns (in both 2D and 3D views)
+- **Tuning** — A4 reference: 415 Hz · 432 Hz · 440 Hz · 444 Hz (C=528) · 448 Hz
 
 ### Visualization
-- **Orbital mandala** — full-screen immersive view; each loop is a slowly-rotating hand that blooms on strike, with connecting threads that light up when loops align. Mood-tinted (each palette has its own colour field), audio-reactive (breathes and brightens with the live output)
-- **Panel view** — stacked bar display showing loop lengths, playhead positions, stereo drift plot, and instrument glyphs
+- **3D Space** — WebGL orrery; each voice is a glowing orb on a seeded tilted orbit travelling at its loop rate, with comet trails, strike particle bursts, and a central star. Drag (mouse/touch) to rotate, pinch/scroll to zoom.
+- **Orbital mandala** — full-screen 2D view; each loop is a rotating hand that blooms on strike, with threads that light when loops align. Mood-tinted and audio-reactive.
+- **Panel view** — stacked bars showing loop lengths, playheads, stereo-drift plot, and instrument glyphs.
+
+### 3D spatial audio
+An optional HRTF mode (headphones, off by default) that places each voice's sound where its orb appears in the 3D orrery. In the 3D view the soundstage follows the camera — rotating the orrery rotates the sound field. The orbit geometry is shared between the renderer and the audio engine so picture and sound agree.
+
+### Atelier (hidden expert mode)
+Unlocked by triple-tapping the title on the main view. Turns the generator into a hand-authored instrument:
+- **Custom harmony** — pick a key (12 roots) and a mode (24 scales, from the diatonic modes through exotic, world, and symmetric scales), and toggle individual scale degrees.
+- **Voice loom** — a per-loop editor: set each loop's instrument, note (or "roam"), and length; capture the live field into editable rows; lock voices so they hold while the rest keep drifting.
+- **Web MIDI** — map a controller's knobs/faders to the dials and mixer levels, and buttons/keys to transport (Play/Pause, Start, Stop) and scenes (next/prev, reshuffle), via a MIDI-learn flow. Chromium-based browsers only.
 
 ### Other
-- **Export to WAV** — renders 1–5 minutes offline at 44.1 kHz stereo (all loops, reverb, ambience, and binaural beats printed)
-- **Personal library** — save and recall favourite configurations
-- **Share link** — encodes the full state (all dials + seed) in the URL hash
-- **PWA** — installable, works offline, lock-screen media controls via Media Session API
+- **Export to WAV** — renders 1–5 minutes offline at 44.1 kHz stereo (deterministic)
+- **Personal library** — save and recall favourite configurations (local)
+- **Share link** — encodes the full state (all dials + seed, plus any Atelier scale/voice data) in the URL hash
+- **PWA** — installable, works offline, lock-screen media controls via Media Session API, screen wake lock while playing, portrait-locked on mobile
 
 ---
 
@@ -111,30 +121,31 @@ Timed arcs that travel between scenes with smooth crossfades: Into Sleep · Deep
 ```
 src/
   engine/
-    constants.js        # MOODS, INSTRUMENTS, ENSEMBLES, BINAURAL data
+    constants.js        # MOODS, SCALES, INSTRUMENTS, ENSEMBLES, BINAURAL data
     utils.js            # RNG, midiToFreq, clamp, noteName
-    AmbientEngine.js    # Audio engine class
-    index.js            # Singleton export
+    orbit.js            # shared orbit geometry (3D viz + spatial audio)
+    AmbientEngine.js    # audio engine: synthesis, scheduler, generative logic
+    index.js            # singleton export
+    __tests__/          # utils, atelier (scale/voice parsing), orbit
   ui/
-    labels.js           # Dial label functions
-    constants.js        # UI constants (scenes, journeys, textures…)
+    labels.js           # dial label functions
+    constants.js        # UI constants (scenes, journeys, textures, brainwaves…)
     persistence.js      # URL hash + localStorage read/write
-    glyphs.jsx          # Canvas instrument glyphs + DOM legend
+    glyphs.jsx          # instrument glyphs (canvas + DOM legend) + mood palettes
     icons.jsx           # SVG icon components
-    canvas.js           # Canvas renderer factory (mandala + panel)
+    canvas.js           # 2D renderer factory (mandala + panel)
+    webgl.js            # WebGL renderer (3D "Drift Space" orrery)
+    midi.js             # Web MIDI manager + message parser
     components/
       Slider.jsx
       Dial.jsx
-    App.jsx             # Main React component
-  main.jsx              # Entry point + service worker registration
+    App.jsx             # main React component
+    __tests__/          # labels, midi
+  main.jsx              # entry point + service worker registration
   styles.css
 
-public/
-  icons/
-  manifest.webmanifest
-  sw.js
-
-project/                # Original design prototype (reference only)
+public/                 # icons, manifest.webmanifest, sw.js
+PRODUCT.md              # full product/feature description
 ```
 
 ---
@@ -142,10 +153,13 @@ project/                # Original design prototype (reference only)
 ## Tech stack
 
 - **React 18** — UI
-- **Web Audio API** — all synthesis and effects (no external audio libs)
+- **Web Audio API** — all synthesis and effects, incl. HRTF spatial audio (no external audio libs, no samples)
+- **WebGL** — 3D visualization (raw, no 3D library)
+- **Web MIDI API** — external controller mapping
 - **Vite 5** — build tooling
-- **Terser** — minification
-- **javascript-obfuscator** — bundle obfuscation
+- **Terser** + **vite-plugin-obfuscator** — minification and obfuscation
+- **Vitest** — unit tests
+- **GitHub Actions** — CI/CD (test → build → deploy to GitHub Pages)
 
 ---
 
