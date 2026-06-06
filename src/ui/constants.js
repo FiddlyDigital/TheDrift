@@ -90,6 +90,8 @@ export const SCENES = [
   { name: "Daybreak",    p: { mood: "curious",    ensemble: "glitch",    density: 6, tempo: 0.52, drift: 0.62, register: 0.56, space: 0.62, color: 0.70, stutter: 0.04, bloom: 0.18, evolve: 0.42, journey: 0.00, glue: 0.30, tuning: 432, binaural: "off",   binlevel: 0.40, texture: "wind",        texlevel: 0.22, looplevel: 0.96 } },
   // alert flow — bright, busy glasswork at pace, beta beat, a breath of white noise
   { name: "Quickening",  p: { mood: "curious",    ensemble: "glasswork", density: 7, tempo: 0.62, drift: 0.44, register: 0.60, space: 0.44, color: 0.80, stutter: 0.06, bloom: 0.34, evolve: 0.38, journey: 0.00, glue: 0.38, tuning: 440, binaural: "beta",  binlevel: 0.28, texture: "white",       texlevel: 0.18, looplevel: 1 } },
+  // a swirling max-density flock of arps & birdsong, harmony slowly migrating, alpha focus over wind
+  { name: "Murmuration", p: { mood: "curious",    ensemble: "glitch",    density: 12,tempo: 0.69, drift: 0.62, register: 0.56, space: 0.74, color: 0.70, stutter: 0.04, bloom: 0.18, evolve: 0.09, journey: 0.70, glue: 0.30, tuning: 432, binaural: "alpha", binlevel: 0.68, texture: "wind",        texlevel: 0.29, looplevel: 0.96 } },
 ];
 export const SCENE_DIAL_KEYS = ["mood", "ensemble", "density", "tempo", "drift", "register", "space", "color", "stutter", "bloom", "evolve", "journey", "glue", "tuning", "binaural", "binlevel", "texture", "texlevel", "looplevel"];
 export const SCENE_BY_NAME = {};
