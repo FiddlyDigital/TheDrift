@@ -75,6 +75,31 @@ describe('App smoke (baseline behaviour to preserve)', () => {
     expect(ENGINE.set).toHaveBeenCalled();
   });
 
+  it('opens the Journey sheet from the immersive dock and lists journeys', () => {
+    useDriftStore.setState({ showWelcome: false });
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: /Journey/ }));
+    expect(screen.getByText('Journeys')).toBeInTheDocument();
+    expect(screen.getByText('Endless Drift')).toBeInTheDocument();
+  });
+
+  it('opens the Session sheet with length options', () => {
+    useDriftStore.setState({ showWelcome: false });
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: /Session/ }));
+    expect(screen.getByText('Length')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Begin .*session/i })).toBeInTheDocument();
+  });
+
+  it('renders the live session sheet (progress bar) without crashing', () => {
+    useDriftStore.setState({
+      showWelcome: false, sheet: 'session',
+      sessionEnd: Date.now() + 600000, sessionRemain: 600, _sessionTotal: 600,
+    });
+    render(<App />);
+    expect(screen.getByRole('button', { name: 'End session' })).toBeInTheDocument();
+  });
+
   it('unlocks Atelier after three taps on the title', () => {
     const { container } = render(<App />);
     const title = container.querySelector('h1.title');

@@ -48,6 +48,7 @@ export default function App() {
     savedToast, renamingId, sleepDur, sleepRemain, wakeIn, wakeAt, wakeRising,
     sessionPick, sessionInterval, sessionEnd, sessionRemain,
     journey, journeyRemain, journeyStop, driftOn, driftNow, driftNext, driftProgress,
+    _sessionTotal: sessionTotal,
     installPrompt, isFullscreen, breathOn, breathPat, section, expert, expertToast,
     spatial, spatialToast, midiSupported, midiEnabled, midiInputs, midiLearn, midiMap,
     copied, showWelcome, welcomeHiding, families, WELCOME,
@@ -764,7 +765,7 @@ export default function App() {
                     <h2 className="sheet-title">Session</h2>
                     <div className="session-clock">{fmt(sessionRemain)}</div>
                     <div className="session-bar"><div className="session-bar-fill"
-                      style={{ width: (sessionTotalRef.current ? Math.min(100, (1 - sessionRemain / sessionTotalRef.current) * 100) : 0) + "%" }}></div></div>
+                      style={{ width: (sessionTotal ? Math.min(100, (1 - sessionRemain / sessionTotal) * 100) : 0) + "%" }}></div></div>
                     <div className="session-meta">
                       {sessionInterval > 0 ? <span><BellIcon /> bell every {sessionInterval} min</span> : <span>silence between the bells</span>}
                     </div>
