@@ -86,6 +86,8 @@ export const SCENES = [
   { name: "Procession",  p: { mood: "dusk",       ensemble: "world",     density: 7, tempo: 0.54, drift: 0.66, register: 0.44, space: 0.64, color: 0.56, stutter: 0.10, bloom: 0.20, evolve: 0.50, journey: 0.00, glue: 0.42, tuning: 448, binaural: "off",   binlevel: 0.40, texture: "wind",        texlevel: 0.36, looplevel: 1 } },
   // nostalgic 8-bit dusk — gentle chiptune through tape hiss & static
   { name: "Arcade Dusk", p: { mood: "pensive",    ensemble: "eightbit",  density: 6, tempo: 0.50, drift: 0.52, register: 0.56, space: 0.58, color: 0.64, stutter: 0.08, bloom: 0.22, evolve: 0.42, journey: 0.00, glue: 0.34, tuning: 440, binaural: "off",   binlevel: 0.40, texture: "tape.static", texlevel: 0.32, looplevel: 1 } },
+  // dawn chorus — arpeggios, soft birdsong shrills & trills over a thread of wind
+  { name: "Daybreak",    p: { mood: "curious",    ensemble: "glitch",    density: 6, tempo: 0.52, drift: 0.62, register: 0.56, space: 0.62, color: 0.70, stutter: 0.04, bloom: 0.18, evolve: 0.42, journey: 0.00, glue: 0.30, tuning: 432, binaural: "off",   binlevel: 0.40, texture: "wind",        texlevel: 0.22, looplevel: 0.96 } },
   // alert flow — bright, busy glasswork at pace, beta beat, a breath of white noise
   { name: "Quickening",  p: { mood: "curious",    ensemble: "glasswork", density: 7, tempo: 0.62, drift: 0.44, register: 0.60, space: 0.44, color: 0.80, stutter: 0.06, bloom: 0.34, evolve: 0.38, journey: 0.00, glue: 0.38, tuning: 440, binaural: "beta",  binlevel: 0.28, texture: "white",       texlevel: 0.18, looplevel: 1 } },
 ];

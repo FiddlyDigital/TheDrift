@@ -57,12 +57,23 @@ export function drawGlyph(ctx, family, x, y, r, color) {
     }
     case "bowl": // singing bowl: lower half-disc
       ctx.beginPath(); ctx.arc(x, y - r * 0.2, r, 0, Math.PI, false); ctx.closePath(); ctx.fill(); break;
+    case "arp": // arpeggio: a rising staircase of three dots
+      for (let k = -1; k <= 1; k++) { ctx.beginPath(); ctx.arc(x + k * r * 0.7, y - k * r * 0.7, r * 0.42, 0, Math.PI * 2); ctx.fill(); }
+      break;
+    case "chirp": // birdsong: a small up-flicking tick (like a checkmark)
+      ctx.lineWidth = r * 0.34;
+      ctx.beginPath(); ctx.moveTo(x - r * 0.9, y + r * 0.3); ctx.lineTo(x - r * 0.1, y + r * 0.7); ctx.lineTo(x + r * 0.95, y - r * 0.9); ctx.stroke();
+      break;
+    case "trill": // trill: two stacked dots (the alternating pair)
+      ctx.beginPath(); ctx.arc(x, y - r * 0.55, r * 0.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x, y + r * 0.55, r * 0.5, 0, Math.PI * 2); ctx.fill();
+      break;
     default: // piano: filled circle
       ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
   }
 }
 
-export const FAMILY_LABEL = { piano: "Felt piano", bell: "Bells", marimba: "Marimba", harp: "Harp", handpan: "Handpan", kalimba: "Kalimba", wood: "Woodblock", frame: "Frame drum", strings: "Strings", choir: "Choir", flute: "Flute", drone: "Drone", chip: "8-bit pulse", tabla: "Tabla", udu: "Udu", balafon: "Balafon", bowl: "Singing bowl" };
+export const FAMILY_LABEL = { piano: "Felt piano", bell: "Bells", marimba: "Marimba", harp: "Harp", handpan: "Handpan", kalimba: "Kalimba", wood: "Woodblock", frame: "Frame drum", strings: "Strings", choir: "Choir", flute: "Flute", drone: "Drone", chip: "8-bit pulse", tabla: "Tabla", udu: "Udu", balafon: "Balafon", bowl: "Singing bowl", arp: "Arpeggio", chirp: "Birdsong", trill: "Trill" };
 
 // ---- per-mood visualization palette (deep tint + luminous accent) ----
 export const MOOD_VIZ = {
@@ -98,6 +109,9 @@ export function GlyphSVG({ family }) {
     case "udu": return (<svg {...p}><circle cx="6" cy="7" r="4.1" fill={ink} /><circle cx="6" cy="2.2" r="1.5" fill="none" stroke={ink} strokeWidth="1.1" /></svg>);
     case "balafon": return (<svg {...p}><rect x="1.7" y="3" width="1.9" height="6" fill={ink} /><rect x="5.05" y="1.6" width="1.9" height="8.8" fill={ink} /><rect x="8.4" y="3" width="1.9" height="6" fill={ink} /></svg>);
     case "bowl": return (<svg {...p}><path d="M1.4 4.6 A4.6 4.6 0 0 1 10.6 4.6 Z" fill={ink} /></svg>);
+    case "arp": return (<svg {...p}><circle cx="2.4" cy="9" r="1.7" fill={ink} /><circle cx="6" cy="6" r="1.7" fill={ink} /><circle cx="9.6" cy="3" r="1.7" fill={ink} /></svg>);
+    case "chirp": return (<svg {...p}><path d="M1.4 7 4 9 10.6 2" fill="none" stroke={ink} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>);
+    case "trill": return (<svg {...p}><circle cx="6" cy="3.4" r="2" fill={ink} /><circle cx="6" cy="8.6" r="2" fill={ink} /></svg>);
     default: return (<svg {...p}><circle cx="6" cy="6" r="4.6" fill={ink} /></svg>);
   }
 }

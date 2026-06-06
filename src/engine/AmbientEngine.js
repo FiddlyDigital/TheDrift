@@ -788,8 +788,113 @@ AmbientEngine.prototype.panAt = function (v, t) {
 
 AmbientEngine.prototype.playVoice = function (v, time, opts) {
   const inst = INSTRUMENTS[v.inst] || INSTRUMENTS.piano;
-  if (inst.sustained) this._synthSustained(v, time, opts || {}, inst);
-  else this._synthStruck(v, time, opts || {}, inst);
+  opts = opts || {};
+  if (inst.kind === "arp") this._synthArp(v, time, opts, inst);
+  else if (inst.kind === "chirp") this._synthChirp(v, time, opts, inst);
+  else if (inst.kind === "trill") this._synthTrill(v, time, opts, inst);
+  else if (inst.sustained) this._synthSustained(v, time, opts, inst);
+  else this._synthStruck(v, time, opts, inst);
+};
+
+// ---- Glitch family: short multi-note gestures -----------------------
+// nearest index of a midi note within the current scale pool
+AmbientEngine.prototype._poolIndex = function (midi) {
+  const pool = this._pool || [];
+  let idx = pool.indexOf(midi);
+  if (idx >= 0) return idx;
+  let best = 1e9;
+  for (let i = 0; i < pool.length; i++) {
+    const d = Math.abs(pool[i] - midi);
+    if (d < best) { best = d; idx = i; }
+  }
+  return Math.max(0, idx);
+};
+
+// one short plucked tone routed through a shared gesture bus
+AmbientEngine.prototype._synthBlip = function (bus, freq, time, dur, vel, color, wave, glideTo) {
+  const ctx = this.ctx;
+  const g = ctx.createGain();
+  const peak = 0.12 * vel;
+  g.gain.setValueAtTime(0.0001, time);
+  g.gain.linearRampToValueAtTime(peak, time + 0.005);
+  g.gain.exponentialRampToValueAtTime(0.0001, time + dur);
+  const lp = ctx.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = clamp(1400 + color * 5200, 500, 9500);
+  lp.Q.value = 0.4;
+  const o = ctx.createOscillator();
+  o.type = wave || "triangle";
+  o.frequency.setValueAtTime(Math.max(20, freq), time);
+  if (glideTo) o.frequency.exponentialRampToValueAtTime(clamp(glideTo, 20, 9000), time + dur * 0.85);
+  o.connect(lp); lp.connect(g); g.connect(bus);
+  o.start(time); o.stop(time + dur + 0.05);
+};
+
+// arpeggio: a rapid broken chord that walks up or down the scale in thirds
+AmbientEngine.prototype._synthArp = function (v, time, opts, inst) {
+  const ctx = this.ctx;
+  const color = this._effColor();
+  const vel = (opts.vel == null ? 1 : opts.vel) * inst.gain;
+  const pool = this._pool || [];
+  if (!pool.length) return;
+  const idx = this._poolIndex(v.midi);
+  const up = Math.random() < 0.62;
+  const steps = 4 + Math.floor(Math.random() * 4);   // 4..7 notes
+  const gap0 = 0.06 + Math.random() * 0.04;
+  const onset = time + (Math.random() - 0.5) * 0.01;
+  const span = steps * gap0 + 0.6;
+  const bus = ctx.createGain();
+  this._panOut(v, bus, onset, span);
+  let t = onset;
+  for (let k = 0; k < steps; k++) {
+    const pIdx = clamp(idx + (up ? 1 : -1) * k * 2, 0, pool.length - 1); // thirds
+    const f = midiToFreq(pool[pIdx], this.params.tuning);
+    const last = k === steps - 1;
+    this._synthBlip(bus, f, t, last ? 0.6 : 0.34, vel * Math.pow(0.94, k), color, inst.wave);
+    t += gap0;
+  }
+};
+
+// chirp: a soft, high birdsong burst — a few quick up-glides
+AmbientEngine.prototype._synthChirp = function (v, time, opts, inst) {
+  const ctx = this.ctx;
+  const color = this._effColor();
+  const vel = (opts.vel == null ? 1 : opts.vel) * inst.gain;
+  const burst = 2 + Math.floor(Math.random() * 4);   // 2..5 chirps
+  const onset = time + (Math.random() - 0.5) * 0.01;
+  const bus = ctx.createGain();
+  this._panOut(v, bus, onset, 0.9);
+  let t = onset;
+  for (let b = 0; b < burst; b++) {
+    const top = clamp(v.freq * (2 + Math.floor(Math.random() * 2)) * (0.9 + Math.random() * 0.3), 700, 5200);
+    const dur = 0.04 + Math.random() * 0.05;
+    // start a touch below and glide up — the soft "shrill"
+    this._synthBlip(bus, top * 0.62, t, dur, vel * 0.5, color, inst.wave, top * (1.05 + Math.random() * 0.25));
+    t += dur + 0.03 + Math.random() * 0.09;
+  }
+};
+
+// trill: rapid soft alternation between a note and an upper neighbour
+AmbientEngine.prototype._synthTrill = function (v, time, opts, inst) {
+  const ctx = this.ctx;
+  const color = this._effColor();
+  const vel = (opts.vel == null ? 1 : opts.vel) * inst.gain;
+  const pool = this._pool || [];
+  if (!pool.length) return;
+  const idx = this._poolIndex(v.midi);
+  const hi = clamp(idx + 1 + Math.floor(Math.random() * 2), 0, pool.length - 1);
+  const f0 = v.freq, f1 = midiToFreq(pool[hi], this.params.tuning);
+  const n = 6 + Math.floor(Math.random() * 7);       // 6..12 notes
+  const gap = 0.05 + Math.random() * 0.02;
+  const onset = time + (Math.random() - 0.5) * 0.01;
+  const bus = ctx.createGain();
+  this._panOut(v, bus, onset, n * gap + 0.3);
+  let t = onset;
+  for (let k = 0; k < n; k++) {
+    const last = k === n - 1;
+    this._synthBlip(bus, k % 2 ? f1 : f0, t, last ? 0.4 : 0.15, vel * 0.62 * Math.pow(0.97, k), color, inst.wave);
+    t += gap;
+  }
 };
 
 // struck/plucked: percussive attack, exponential ring (piano, bell, marimba, harp)

@@ -112,6 +112,13 @@ export const INSTRUMENTS = {
              partials: [[1, 1], [2.32, 0.6], [3.5, 0.34], [4.8, 0.18], [6.7, 0.08]],
              attack: 0.02, decayLow: 8.0, decayHigh: 4.5,
              cutBase: 800, cutColor: 3200, cutTrack: 0.7, hammer: 0.0, gain: 0.58 },
+
+  // ---- Glitch family: multi-note gestures fired once per loop strike ----
+  // these have no partials/decay; playVoice routes `kind` to a custom synth
+  // that schedules a little burst from the single strike time.
+  arp:     { family: "arp",     kind: "arp",     wave: "triangle", sustained: false, gain: 0.85 },
+  chirp:   { family: "chirp",   kind: "chirp",   wave: "sine",     sustained: false, gain: 0.70 },
+  trill:   { family: "trill",   kind: "trill",   wave: "triangle", sustained: false, gain: 0.78 },
 };
 
 // curated pools the seed draws from; "orchestra" is the random mix
@@ -124,9 +131,10 @@ export const ENSEMBLES = {
   eightbit:  { name: "8-Bit",      pool: ["chiplead", "chipblip", "chipbass", "chiplead", "chipblip"] },
   strings:   { name: "Strings",    pool: ["strings", "drone", "strings"] },
   choir:     { name: "Choir",      pool: ["choir", "flute", "choir", "drone"] },
+  glitch:    { name: "Glitch",     pool: ["arp", "chirp", "arp", "trill", "chirp"] },
   orchestra: { name: "Orchestra",  pool: ["piano", "bell", "strings", "choir", "flute", "harp", "marimba", "handpan", "kalimba", "framedrum", "drone"] },
 };
-export const ENSEMBLE_ORDER = ["piano", "glasswork", "handpan", "percussion", "world", "eightbit", "strings", "choir", "orchestra"];
+export const ENSEMBLE_ORDER = ["piano", "glasswork", "handpan", "percussion", "world", "eightbit", "glitch", "strings", "choir", "orchestra"];
 
 // ---- binaural beats -----------------------------------------------
 // two pure sines, one isolated to each ear; the small frequency offset
