@@ -121,7 +121,7 @@ const MAX_PARTICLES = 480;
 const TRAIL_LEN = 60;            // history points streaming behind each orb
 const TWO_PI = Math.PI * 2;
 
-export function createWebGLRenderer({ canvas, engine, levRef, cameraRef }) {
+export function createWebGLRenderer({ canvas, engine, levRef, cameraRef, modRef }) {
   const gl = canvas.getContext("webgl", { antialias: true, alpha: true, premultipliedAlpha: false });
   if (!gl) return null;
 
@@ -299,6 +299,8 @@ export function createWebGLRenderer({ canvas, engine, levRef, cameraRef }) {
     const lev = (levRef.current && levRef.current.level) || 0;
     const levHigh = (levRef.current && levRef.current.high) || 0;
     const bloom = engine.params.bloom || 0;
+    // breath swell + beat-entrainment flicker, shared with the 2D field
+    const lum = (modRef && modRef.current && modRef.current.lum) || 0;
 
     // clear with mood edge color
     gl.clearColor(bgEdge[0], bgEdge[1], bgEdge[2], 1);
@@ -383,8 +385,8 @@ export function createWebGLRenderer({ canvas, engine, levRef, cameraRef }) {
     }
 
     // central star — brightness rides the live level
-    const starSize = (260 + lev * 520) * dim.dpr;
-    pushPoint(0, 0, 0, starSize, accCol[0], accCol[1], accCol[2], 0.5 + lev * 0.45);
+    const starSize = (260 + lev * 520) * (1 + lum) * dim.dpr;
+    pushPoint(0, 0, 0, starSize, accCol[0], accCol[1], accCol[2], Math.min(1, (0.5 + lev * 0.45) * (1 + lum)));
 
     // per-voice pitch-tinted color: blend mood accent (low) with ink (high)
     function voiceColor(v) {
@@ -433,8 +435,8 @@ export function createWebGLRenderer({ canvas, engine, levRef, cameraRef }) {
       const since = v.viz.strike ? audioNow - v.viz.strike : 99;
       const bloomK = since >= 0 && since < 1.6 ? (1 - since / 1.6) : 0;
       const famSize = FAMILY_SIZE[v.family] || 1.0;
-      const size = (120 * famSize + bloomK * 220 + bloom * 60) * dim.dpr;
-      const alpha = 0.6 + bloomK * 0.4 + lev * 0.2;
+      const size = (120 * famSize + bloomK * 220 + bloom * 60) * (1 + lum) * dim.dpr;
+      const alpha = (0.6 + bloomK * 0.4 + lev * 0.2) * (1 + lum);
       // soft colored halo
       pushPoint(p[0], p[1], p[2], size, col[0], col[1], col[2], Math.min(1, alpha));
       // hot bright core — pushes color toward white for high contrast

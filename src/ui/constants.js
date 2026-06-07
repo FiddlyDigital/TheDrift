@@ -10,6 +10,25 @@ export const BRAINWAVES = [
   { id: "gamma", name: "Gamma", hz: "40 Hz",  note: "task anchor" },
 ];
 
+// beat-entrainment light: a gentle luminance flicker locked to the beat. Capped
+// shallow, and SUPPRESSED at/above this rate — fast, high-contrast flicker
+// (~15–20 Hz worst) is a photosensitive-seizure risk, so only slow bands pulse.
+export const ENTRAIN_MAX_HZ = 13;
+export const ENTRAIN_DEPTH = 0.06;
+export function entrainLum(enabled, beatHz, t) {
+  if (!enabled || !(beatHz > 0) || beatHz >= ENTRAIN_MAX_HZ) return 0;
+  return Math.sin(t * 2 * Math.PI * beatHz) * ENTRAIN_DEPTH;
+}
+
+// how the brainwave beat is delivered. Binaural needs headphones; monaural and
+// isochronic produce a physical pulse that entrains over speakers too (and tend
+// to drive a stronger cortical response).
+export const BEAT_MODES = [
+  { id: "binaural",   name: "Binaural",   note: "two tones, one per ear — needs headphones" },
+  { id: "monaural",   name: "Monaural",   note: "tones summed — works on speakers" },
+  { id: "isochronic", name: "Isochronic", note: "a pulsing tone — works on speakers" },
+];
+
 // ---- breath synchronization patterns ---------------------------------
 // each is a sequence of phases {d: seconds, s0->s1: lung-fullness 0..1, label}.
 // the mandala draws a ring that scales with fullness, so a meditator can pace
@@ -27,6 +46,25 @@ export const BREATH_PATTERNS = {
   "478":Object.assign(makeBreath(4, 7, 8, 0),     { name: "4-7-8" }),     // relaxing
 };
 export const BREATH_ORDER = ["calm", "box", "478"];
+
+// personal resonance-breathing rate (breaths/min). The "natural" rate that
+// maximizes heart-rate-variability / baroreflex resonance is individual and sits
+// near 0.1 Hz; let people tune it across the well-supported 4.5–7 range.
+export const BREATH_RATE_MIN = 4.5;
+export const BREATH_RATE_MAX = 7;
+export const BREATH_RATE_DEFAULT = 6;   // 6 breaths/min = 0.1 Hz
+
+// the Coherent pattern is rate-driven (equal eased in/out, no holds); Box and
+// 4-7-8 have intrinsic timing and ignore the rate. One place both the visual
+// pacer and the audio breath read, so they always agree.
+export function getBreathPattern(patId, rateBpm) {
+  if (patId === "calm") {
+    const rate = Math.min(BREATH_RATE_MAX, Math.max(BREATH_RATE_MIN, rateBpm || BREATH_RATE_DEFAULT));
+    const half = 60 / rate / 2;
+    return Object.assign(makeBreath(half, 0, half, 0), { name: "Coherent" });
+  }
+  return BREATH_PATTERNS[patId] || BREATH_PATTERNS.calm;
+}
 
 // ---- tuning: reference pitch A4 --------------------------------------
 export const TUNINGS = [

@@ -1,7 +1,7 @@
 import { drawGlyph, MOOD_VIZ } from './glyphs.jsx';
-import { BREATH_PATTERNS } from './constants.js';
+import { getBreathPattern } from './constants.js';
 
-export function createRenderer({ ctx, canvas, engine, ripplesRef, levRef, bellSeenRef, bellPulseRef, journeyPulseRef, immersiveRef, breathRef, breathPatRef }) {
+export function createRenderer({ ctx, canvas, engine, ripplesRef, levRef, bellSeenRef, bellPulseRef, journeyPulseRef, immersiveRef, breathRef, breathPatRef, breathRateRef, modRef }) {
   const PAD_T = 24, PAD_B = 22;
   const INK = "44,39,31";
   const ACC = "176,97,58";
@@ -217,7 +217,9 @@ export function createRenderer({ ctx, canvas, engine, ripplesRef, levRef, bellSe
     const lev = (levRef.current && levRef.current.level) || 0;
     const levLow = (levRef.current && levRef.current.low) || 0;
     const levHigh = (levRef.current && levRef.current.high) || 0;
-    const glow = 0.55 + colr * 0.5 + (engine.params.bloom || 0) * 0.22 + lev * 0.5;
+    // breath swell + beat-entrainment flicker gently lift the whole field
+    const lum = (modRef && modRef.current && modRef.current.lum) || 0;
+    const glow = (0.55 + colr * 0.5 + (engine.params.bloom || 0) * 0.22 + lev * 0.5) * (1 + lum);
 
     // deep, mood-tinted background wash
     const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, minDim * 0.78);
@@ -375,7 +377,7 @@ export function createRenderer({ ctx, canvas, engine, ripplesRef, levRef, bellSe
 
     // ---- breath synchronization guide ----
     if (breathRef.current) {
-      const pat = BREATH_PATTERNS[breathPatRef.current] || BREATH_PATTERNS.calm;
+      const pat = getBreathPattern(breathPatRef.current, breathRateRef && breathRateRef.current);
       let pos = audioNow % pat.total;
       let phase = pat.seq[0], local = 0;
       for (let k = 0; k < pat.seq.length; k++) {

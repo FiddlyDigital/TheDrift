@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { ENGINE } from '../../engine/index.js';
-import { BREATH_PATTERNS } from '../constants.js';
+import { getBreathPattern, entrainLum } from '../constants.js';
+import { BINAURAL } from '../../engine/constants.js';
 import { createRenderer } from '../canvas.js';
 import { createWebGLRenderer } from '../webgl.js';
 import { useDriftStore } from '../store/useDriftStore.js';
@@ -14,6 +15,9 @@ export function useVisualizer({ canvasRef, glCanvasRef, breathRingRef, breathLab
   // visual-only internals (written and read inside the loop / renderer)
   const ripplesRef = useRef([]);
   const levRef = useRef({ level: 0, low: 0, high: 0 });
+  // additive luminance delta (0 = no change) the renderers read each frame, fed
+  // by the breath swell + beat-entrainment flicker computed in the loop.
+  const modRef = useRef({ lum: 0 });
   const bellSeenRef = useRef(0);
   const bellPulseRef = useRef(null);
   const cameraRef = useRef(null);
@@ -36,6 +40,7 @@ export function useVisualizer({ canvasRef, glCanvasRef, breathRingRef, breathLab
     const immersiveRef = { get current() { return store.getState().immersive; } };
     const breathRef = { get current() { return store.getState().breathOn; } };
     const breathPatRef = { get current() { return store.getState().breathPat; } };
+    const breathRateRef = { get current() { return store.getState().breathRate; } };
     const journeyPulseRef = {
       get current() { return store.getState().journeyPulse; },
       set current(v) { store.setState({ journeyPulse: v }); },
@@ -60,7 +65,7 @@ export function useVisualizer({ canvasRef, glCanvasRef, breathRingRef, breathLab
 
     const { draw: drawFrame } = createRenderer({
       ctx, canvas, engine: ENGINE, ripplesRef, levRef, bellSeenRef, bellPulseRef,
-      journeyPulseRef, immersiveRef, breathRef, breathPatRef,
+      journeyPulseRef, immersiveRef, breathRef, breathPatRef, breathRateRef, modRef,
     });
 
     // throttle elapsed updates to ~2/s
@@ -71,31 +76,47 @@ export function useVisualizer({ canvasRef, glCanvasRef, breathRingRef, breathLab
 
     function loop() {
       const audioNow = ENGINE.ctx ? ENGINE.ctx.currentTime : performance.now() / 1000;
-      const startedAt = store.getState().startedAt;
+      const st = store.getState();
+      const startedAt = st.startedAt;
       if (startedAt && ENGINE.playing) setElapsedThrottled(audioNow - startedAt);
+
+      // ---- breath + entrainment modulation -------------------------------
+      // computed once per frame: drives the audible breath, the visual swell,
+      // and (in 3D) the DOM breath overlay so they always agree.
+      let lum = 0, breathPhase = null, breathLocal = 0, breathEase = 0;
+      if (st.breathOn) {
+        const pat = getBreathPattern(st.breathPat, st.breathRate);
+        let pos = audioNow % pat.total;
+        breathPhase = pat.seq[0];
+        for (let k = 0; k < pat.seq.length; k++) {
+          if (pos < pat.seq[k].d) { breathPhase = pat.seq[k]; breathLocal = pos / pat.seq[k].d; break; }
+          pos -= pat.seq[k].d;
+        }
+        breathEase = breathPhase.s0 === breathPhase.s1
+          ? breathPhase.s0
+          : breathPhase.s0 + (breathPhase.s1 - breathPhase.s0) * (0.5 - 0.5 * Math.cos(breathLocal * Math.PI));
+        if (ENGINE.playing) ENGINE.setBreathPhase(breathEase);
+        lum += breathEase * 0.10;   // brighten up to +10% on the inhale
+      }
+      // beat-entrainment flicker: gentle, smooth, and gated off for fast bands
+      // (see entrainLum — photosensitivity safety).
+      const beatHz = BINAURAL[ENGINE.params.binaural] || 0;
+      lum += entrainLum(st.entrainViz, beatHz, audioNow);
+      modRef.current.lum = lum;
+
       drawFrame(dim);
-      const in3D = store.getState().vizMode === "space" && store.getState().immersive;
+      const in3D = st.vizMode === "space" && st.immersive;
       if (in3D && glCanvasRef.current) {
         if (!glRendererRef.current) {
-          glRendererRef.current = createWebGLRenderer({ canvas: glCanvasRef.current, engine: ENGINE, levRef, cameraRef });
+          glRendererRef.current = createWebGLRenderer({ canvas: glCanvasRef.current, engine: ENGINE, levRef, cameraRef, modRef });
         }
         if (glRendererRef.current) glRendererRef.current.draw(dim);
         // the 2D mandala draws its own breath guide; in 3D that canvas is hidden,
-        // so drive a DOM breath overlay from the same timing here.
-        if (store.getState().breathOn && breathRingRef.current) {
-          const pat = BREATH_PATTERNS[store.getState().breathPat] || BREATH_PATTERNS.calm;
-          let pos = audioNow % pat.total;
-          let phase = pat.seq[0], local = 0;
-          for (let k = 0; k < pat.seq.length; k++) {
-            if (pos < pat.seq[k].d) { phase = pat.seq[k]; local = pos / pat.seq[k].d; break; }
-            pos -= pat.seq[k].d;
-          }
-          const ease = phase.s0 === phase.s1
-            ? phase.s0
-            : phase.s0 + (phase.s1 - phase.s0) * (0.5 - 0.5 * Math.cos(local * Math.PI));
-          breathRingRef.current.style.transform = "translate(-50%,-50%) scale(" + (0.42 + ease * 0.58).toFixed(3) + ")";
-          if (breathLabelRef.current) breathLabelRef.current.textContent = phase.label;
-          if (breathCountRef.current) breathCountRef.current.textContent = String(Math.max(1, Math.ceil(phase.d - local * phase.d)));
+        // so drive a DOM breath overlay from the same breath phase here.
+        if (st.breathOn && breathPhase && breathRingRef.current) {
+          breathRingRef.current.style.transform = "translate(-50%,-50%) scale(" + (0.42 + breathEase * 0.58).toFixed(3) + ")";
+          if (breathLabelRef.current) breathLabelRef.current.textContent = breathPhase.label;
+          if (breathCountRef.current) breathCountRef.current.textContent = String(Math.max(1, Math.ceil(breathPhase.d - breathLocal * breathPhase.d)));
         }
       }
       // 3D spatial audio: place each voice's sound where its orb is. Follows the

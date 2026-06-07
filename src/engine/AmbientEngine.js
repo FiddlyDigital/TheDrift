@@ -308,38 +308,96 @@ AmbientEngine.prototype._applyGlue = function () {
   this.compMakeup.gain.setTargetAtTime(1 + g * 0.9, t, ta);  // up to +5 dB
 };
 
-// ---- binaural beats ------------------------------------------------
-// built once with the master chain; two sines hard-isolated L/R through a
-// channel merger, summed into binBus -> master (dry, bypassing reverb &
-// compression so the perceived beat stays clean). binBus is silent until a
-// band is chosen AND playback is running.
+// ---- brainwave beats: binaural / monaural / isochronic --------------
+// binBus -> master is built once (dry, bypassing reverb & compression so the
+// perceived beat stays clean) and stays put; the source nodes feeding it are
+// (re)built per mode. Silent until a band is chosen AND playback is running.
+//   binaural   — two sines hard-isolated L/R; the difference is heard as a beat
+//                only on headphones.
+//   monaural   — the two sines summed to mono; the physical amplitude beat is
+//                audible on speakers too.
+//   isochronic — a single carrier pulsed on/off at the beat rate (rounded so it
+//                doesn't click); the strongest cortical onset, no headphones.
 AmbientEngine.prototype._buildBinaural = function () {
   if (this.binBus) return;
   const ctx = this.ctx;
-  this.binMerger = ctx.createChannelMerger(2);
-  this.binL = ctx.createOscillator(); this.binL.type = "sine";
-  this.binR = ctx.createOscillator(); this.binR.type = "sine";
-  this.binLG = ctx.createGain(); this.binLG.gain.value = 0.5;
-  this.binRG = ctx.createGain(); this.binRG.gain.value = 0.5;
-  this.binL.connect(this.binLG); this.binLG.connect(this.binMerger, 0, 0);
-  this.binR.connect(this.binRG); this.binRG.connect(this.binMerger, 0, 1);
   this.binBus = ctx.createGain(); this.binBus.gain.value = 0.0001;
-  this.binMerger.connect(this.binBus);
   this.binBus.connect(this.master);
   this._binBand = this.params.binaural || "off";
-  this.binL.start(); this.binR.start();
+  this._beatmode = this._beatmode || "binaural";
+  this._buildBeatNodes();
   this._applyBinaural();
 };
 
-// set the two carrier frequencies for the active band and ramp the level —
+// a rounded unipolar pulse: sine in [-1,1] -> 0 on the negative half, a smooth
+// hump on the positive half. Click-free isochronic gating (~50% duty).
+AmbientEngine.prototype._isoCurve = function () {
+  const n = 1024, c = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n - 1)) * 2 - 1;
+    c[i] = x > 0 ? Math.pow(x, 1.5) : 0;
+  }
+  return c;
+};
+
+// build the oscillator graph for the current mode, feeding binBus
+AmbientEngine.prototype._buildBeatNodes = function () {
+  const ctx = this.ctx;
+  this._beatNodes = [];
+  const keep = (node) => { this._beatNodes.push(node); return node; };
+  if (this._beatmode === "isochronic") {
+    const carrier = keep(ctx.createOscillator()); carrier.type = "sine";
+    const amp = keep(ctx.createGain()); amp.gain.value = 0;     // gated by the LFO
+    const lfo = keep(ctx.createOscillator()); lfo.type = "sine";
+    const shaper = keep(ctx.createWaveShaper()); shaper.curve = this._isoCurve();
+    const depth = keep(ctx.createGain()); depth.gain.value = 0.5; // pulse peak
+    carrier.connect(amp); amp.connect(this.binBus);
+    lfo.connect(shaper); shaper.connect(depth); depth.connect(amp.gain);
+    carrier.start(); lfo.start();
+    this._iCarrier = carrier; this._iLfo = lfo;
+  } else {
+    // binaural + monaural share two carrier oscillators
+    const oscL = keep(ctx.createOscillator()); oscL.type = "sine";
+    const oscR = keep(ctx.createOscillator()); oscR.type = "sine";
+    const gL = keep(ctx.createGain()); gL.gain.value = 0.5;
+    const gR = keep(ctx.createGain()); gR.gain.value = 0.5;
+    oscL.connect(gL); oscR.connect(gR);
+    if (this._beatmode === "monaural") {
+      gL.connect(this.binBus); gR.connect(this.binBus); // summed to mono
+    } else {
+      const merger = keep(ctx.createChannelMerger(2));
+      gL.connect(merger, 0, 0); gR.connect(merger, 0, 1); // hard L/R
+      merger.connect(this.binBus);
+    }
+    oscL.start(); oscR.start();
+    this.binL = oscL; this.binR = oscR;
+  }
+};
+
+AmbientEngine.prototype._teardownBeatNodes = function () {
+  if (!this._beatNodes) return;
+  for (const node of this._beatNodes) {
+    try { if (node.stop) node.stop(); } catch (e) {}
+    try { node.disconnect(); } catch (e) {}
+  }
+  this._beatNodes = [];
+  this.binL = this.binR = this._iCarrier = this._iLfo = null;
+};
+
+// set the active band's frequencies for the current mode and ramp the level —
 // audible only while a band is on and playback is running
 AmbientEngine.prototype._applyBinaural = function () {
   if (!this.ctx || !this.binBus) return;
   const band = this._binBand || "off";
   const beat = BINAURAL[band] || 0;
   const t = this.ctx.currentTime;
-  this.binL.frequency.setTargetAtTime(BIN_CARRIER - beat / 2, t, 0.06);
-  this.binR.frequency.setTargetAtTime(BIN_CARRIER + beat / 2, t, 0.06);
+  if (this._beatmode === "isochronic") {
+    if (this._iCarrier) this._iCarrier.frequency.setTargetAtTime(BIN_CARRIER, t, 0.06);
+    if (this._iLfo) this._iLfo.frequency.setTargetAtTime(Math.max(0.0001, beat), t, 0.06);
+  } else {
+    if (this.binL) this.binL.frequency.setTargetAtTime(BIN_CARRIER - beat / 2, t, 0.06);
+    if (this.binR) this.binR.frequency.setTargetAtTime(BIN_CARRIER + beat / 2, t, 0.06);
+  }
   const on = beat > 0 && this.playing;
   const lvl = clamp(this.params.binlevel == null ? 0.4 : this.params.binlevel, 0, 1);
   const target = on ? Math.max(0.0001, lvl * 0.17) : 0.0001;
@@ -356,6 +414,58 @@ AmbientEngine.prototype.setBinaural = function (band) {
 AmbientEngine.prototype.setBinLevel = function (v) {
   this.params.binlevel = clamp(v, 0, 1);
   this._applyBinaural();
+};
+
+// switch beat delivery mode (binaural/monaural/isochronic) — rebuild the source
+// graph, leaving binBus -> master and the active band/level intact.
+AmbientEngine.prototype.setBeatMode = function (mode) {
+  if (mode !== "binaural" && mode !== "monaural" && mode !== "isochronic") mode = "binaural";
+  if (mode === this._beatmode) return;
+  this._beatmode = mode;
+  if (this.ctx && this.binBus) {
+    this._teardownBeatNodes();
+    this._buildBeatNodes();
+    this._applyBinaural();
+  }
+};
+
+// ---- resonance breathing: an audible breath guide -------------------
+// a soft band of "air" that swells in on the inhale and ebbs on the exhale, so
+// the whole field breathes with the pacer. Key-agnostic (filtered noise, not a
+// pitched tone) so it never clashes with the music. Built lazily on first use;
+// the per-frame phase 0..1 comes from the animation loop via setBreathPhase.
+AmbientEngine.prototype._buildBreath = function () {
+  if (this.breathBus || !this.ctx) return;
+  const ctx = this.ctx;
+  this.breathBus = ctx.createGain(); this.breathBus.gain.value = 0.0001;
+  this.breathBus.connect(this.master);
+  const src = this._pinkSource();
+  const bp = ctx.createBiquadFilter();
+  bp.type = "bandpass"; bp.frequency.value = 520; bp.Q.value = 0.6; // breath-like band
+  src.connect(bp); bp.connect(this.breathBus);
+  src.start();
+  this._breathSrc = src;
+};
+
+// enable/disable the audible breath. Silences cleanly when turned off.
+AmbientEngine.prototype.setBreathActive = function (on) {
+  this._breathActive = !!on;
+  if (!this.ctx) return;
+  if (on) this._buildBreath();
+  if (this.breathBus && !on) {
+    this.breathBus.gain.setTargetAtTime(0.0001, this.ctx.currentTime, 0.2);
+  }
+};
+
+// per-frame breath swell, ease in 0..1 (0 = empty/exhaled, 1 = full/inhaled).
+// Cheap enough to call every animation frame.
+AmbientEngine.prototype.setBreathPhase = function (ease) {
+  if (!this.ctx || !this._breathActive || !this.playing) return;
+  if (!this.breathBus) this._buildBreath();   // pref may have been set before the ctx existed
+  if (!this.breathBus) return;
+  const e = clamp(ease, 0, 1);
+  const peak = 0.05;  // soft; sits under the music
+  this.breathBus.gain.setTargetAtTime(0.0004 + e * peak, this.ctx.currentTime, 0.05);
 };
 
 // ---- listening volume + sleep fade --------------------------------
@@ -1582,6 +1692,7 @@ AmbientEngine.prototype.pause = function () {
     const t = this.ctx.currentTime;
     if (this.textureDuck) { this.textureDuck.gain.cancelScheduledValues(t); this.textureDuck.gain.setValueAtTime(1, t); }
     if (this.padOut) { this.padOut.gain.cancelScheduledValues(t); this.padOut.gain.setValueAtTime(1, t); }
+    if (this.breathBus) { this.breathBus.gain.cancelScheduledValues(t); this.breathBus.gain.setTargetAtTime(0.0001, t, 0.1); }
   }
   // drop any in-flight crossfade tails so a later resume starts clean
   if (this._fading && this._fading.length) {

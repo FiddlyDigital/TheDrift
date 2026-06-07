@@ -13,6 +13,7 @@ export function Footer() {
   const expertToast = useDriftStore((s) => s.expertToast);
   const spatialToast = useDriftStore((s) => s.spatialToast);
   const playAlongToast = useDriftStore((s) => s.playAlongToast);
+  const entrainToast = useDriftStore((s) => s.entrainToast);
   const installPrompt = useDriftStore((s) => s.installPrompt);
   const install = useDriftStore((s) => s.install);
   const share = useDriftStore((s) => s.share);
@@ -34,6 +35,7 @@ export function Footer() {
         <span className={"toast" + (expertToast ? " show" : "")}>Atelier unlocked &mdash; see the new tab</span>
         <span className={"toast" + (spatialToast ? " show" : "")}>Spatial audio on &mdash; best with headphones</span>
         <span className={"toast" + (playAlongToast ? " show" : "")}>Play along &mdash; tap height for pitch, hold for a glitch</span>
+        <span className={"toast" + (entrainToast ? " show" : "")}>Entrain light on &mdash; gentle by design; skip it if flicker bothers you</span>
         {installPrompt && (
           <button className="ghost-btn" onClick={install}><InstallIcon /> Install app</button>
         )}

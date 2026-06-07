@@ -14,6 +14,8 @@ export function usePersistence() {
     ENGINE.setParams(st.params);
     ENGINE.setVolume(st.volume);
     ENGINE.setSpatial(st.spatial);
+    ENGINE.setBeatMode(st.beatmode);
+    ENGINE.setBreathActive(st.breathOn && st.breathAudible);
     ENGINE.onJourney = (info) => useDriftStore.getState().onJourneyInfo(info);
     return () => { ENGINE.onJourney = null; };
   }, []);

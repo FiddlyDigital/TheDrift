@@ -1,6 +1,8 @@
 import { ENGINE } from '../../engine/index.js';
+import { BREATH_RATE_DEFAULT, BREATH_RATE_MIN, BREATH_RATE_MAX } from '../constants.js';
 
 const upd = (v, prev) => (typeof v === 'function' ? v(prev) : v);
+const clampRate = (v) => Math.min(BREATH_RATE_MAX, Math.max(BREATH_RATE_MIN, v || BREATH_RATE_DEFAULT));
 const ls = (k, d) => { try { return localStorage.getItem(k); } catch (e) { return d; } };
 
 // Presentation + local playback preferences: the immersive view, sheets, the
@@ -23,6 +25,11 @@ export function createUiSlice(set, get, init) {
     copied: false,
     breathOn: ls("loops.breath.on") === "1",
     breathPat: ls("loops.breath.pat") || "calm",
+    breathRate: clampRate(Number(ls("loops.breath.rate"))),
+    breathAudible: ls("loops.breath.audible") !== "0",   // default on
+    beatmode: ls("loops.beatmode") || "binaural",        // binaural | monaural | isochronic
+    entrainViz: ls("loops.entrain") === "1",
+    entrainToast: false,
     section: ls("loops.section") || "scenes",
     expert: ls("loops.expert") === "1",
     expertToast: false,
@@ -50,12 +57,36 @@ export function createUiSlice(set, get, init) {
     setBreathOn: (v) => {
       const next = upd(v, get().breathOn);
       try { localStorage.setItem("loops.breath.on", next ? "1" : "0"); } catch (e) {}
+      ENGINE.setBreathActive(next && get().breathAudible);
       set({ breathOn: next });
     },
     setBreathPat: (v) => {
       const next = upd(v, get().breathPat);
       try { localStorage.setItem("loops.breath.pat", next); } catch (e) {}
       set({ breathPat: next });
+    },
+    setBreathRate: (v) => {
+      const next = clampRate(upd(v, get().breathRate));
+      try { localStorage.setItem("loops.breath.rate", String(next)); } catch (e) {}
+      set({ breathRate: next });
+    },
+    setBreathAudible: (v) => {
+      const next = upd(v, get().breathAudible);
+      try { localStorage.setItem("loops.breath.audible", next ? "1" : "0"); } catch (e) {}
+      ENGINE.setBreathActive(get().breathOn && next);
+      set({ breathAudible: next });
+    },
+    setBeatMode: (v) => {
+      const next = upd(v, get().beatmode);
+      try { localStorage.setItem("loops.beatmode", next); } catch (e) {}
+      ENGINE.setBeatMode(next);
+      set({ beatmode: next });
+    },
+    toggleEntrainViz: () => {
+      const next = !get().entrainViz;
+      try { localStorage.setItem("loops.entrain", next ? "1" : "0"); } catch (e) {}
+      set({ entrainViz: next });
+      if (next) { set({ entrainToast: true }); setTimeout(() => set({ entrainToast: false }), 4200); }
     },
 
     toggleSpatial: () => {
