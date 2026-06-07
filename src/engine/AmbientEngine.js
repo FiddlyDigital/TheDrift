@@ -41,6 +41,13 @@ export function buildScalePool(p) {
   pool.sort(function (a, b) { return a - b; });
   return { base, pool };
 }
+// pick a scale tone from a pool by a 0..1 height (0 = lowest, 1 = highest).
+// Used by the tap "play-along" feature so vertical position maps to pitch.
+export function poolNote(pool, pitch01) {
+  if (!pool || !pool.length) return null;
+  const t = pitch01 < 0 ? 0 : pitch01 > 1 ? 1 : pitch01;
+  return pool[Math.round(t * (pool.length - 1))];
+}
 // voice specs "inst:note:len:lock" joined by "," -> [{inst,note,len,lock}]
 // inst "*" = random from ensemble; note/len "_" = generative (roam)
 export function parseVoices(str) {
@@ -1585,6 +1592,46 @@ AmbientEngine.prototype.strikeBell = function (opts) {
   const ng = ctx.createGain(); ng.gain.value = 0.06 * vel;
   ns.connect(nbp); nbp.connect(ng); ng.connect(this.bellBus || this.master);
   ns.start(now); ns.stop(now + 0.05);
+};
+
+// ---- tap "play-along" ----------------------------------------------
+// a user-dropped transient that joins the field without touching the
+// scheduler. Routes through fieldOut so it shares the field's reverb/glue.
+// An instrument is borrowed from the nearest-pitched playing voice so the
+// drop blends; glitch drops use a short arp/chirp/trill gesture instead.
+AmbientEngine.prototype._nearestStruckInst = function (midi) {
+  let best = null, bestD = 1e9;
+  for (const v of this.voices) {
+    const inst = INSTRUMENTS[v.inst];
+    if (!inst || inst.sustained || inst.kind) continue;   // struck only
+    const d = Math.abs(v.midi - midi);
+    if (d < bestD) { bestD = d; best = v.inst; }
+  }
+  return best || "harp";
+};
+AmbientEngine.prototype._glitchInst = function () {
+  const g = ["arp", "chirp", "trill"];
+  return g[Math.floor(Math.random() * g.length)];
+};
+// opts: { pitch01 (0..1 height), pan (-1..1), vel, glitch }
+AmbientEngine.prototype.dropNote = function (opts) {
+  this.ensureContext();
+  if (this.ctx.state === "suspended") { const r = this.ctx.resume(); if (r && r.catch) r.catch(function () {}); }
+  opts = opts || {};
+  const pool = (buildScalePool(this.params) || {}).pool;
+  const midi = poolNote(pool, opts.pitch01 == null ? 0.5 : opts.pitch01);
+  if (midi == null) return null;
+  const glitch = !!opts.glitch;
+  const inst = glitch ? this._glitchInst() : this._nearestStruckInst(midi);
+  const pan = clamp(opts.pan == null ? 0 : opts.pan, -1, 1);
+  const v = {
+    midi: midi, freq: midiToFreq(midi, this.params.tuning), inst: inst,
+    family: (INSTRUMENTS[inst] && INSTRUMENTS[inst].family) || "piano",
+    period: 4, panBase: pan, panDepth: 0, panRate: 0, panPhase: 0,
+    _out: this.fieldOut, viz: {},
+  };
+  this.playVoice(v, this.ctx.currentTime, { vel: opts.vel == null ? 0.9 : opts.vel });
+  return { midi: midi, family: v.family, glitch: glitch };
 };
 
 // fade the musical field + ambience + beats to silence over `seconds`,

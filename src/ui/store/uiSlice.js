@@ -28,6 +28,8 @@ export function createUiSlice(set, get, init) {
     expertToast: false,
     spatial: ls("loops.spatial") === "1",
     spatialToast: false,
+    playAlong: ls("loops.playalong") === "1",
+    playAlongToast: false,
     installPrompt: null,
 
     setImmersive: (v) => set({ immersive: upd(v, get().immersive) }),
@@ -62,6 +64,13 @@ export function createUiSlice(set, get, init) {
       ENGINE.setSpatial(next);
       set({ spatial: next });
       if (next) { set({ spatialToast: true }); setTimeout(() => set({ spatialToast: false }), 2600); }
+    },
+
+    togglePlayAlong: () => {
+      const next = !get().playAlong;
+      try { localStorage.setItem("loops.playalong", next ? "1" : "0"); } catch (e) {}
+      set({ playAlong: next });
+      if (next) { set({ playAlongToast: true }); setTimeout(() => set({ playAlongToast: false }), 3200); }
     },
 
     unlockExpert: () => {

@@ -12,6 +12,7 @@ export function Footer() {
   const copied = useDriftStore((s) => s.copied);
   const expertToast = useDriftStore((s) => s.expertToast);
   const spatialToast = useDriftStore((s) => s.spatialToast);
+  const playAlongToast = useDriftStore((s) => s.playAlongToast);
   const installPrompt = useDriftStore((s) => s.installPrompt);
   const install = useDriftStore((s) => s.install);
   const share = useDriftStore((s) => s.share);
@@ -32,6 +33,7 @@ export function Footer() {
         <span className={"toast" + (copied ? " show" : "")}>link copied</span>
         <span className={"toast" + (expertToast ? " show" : "")}>Atelier unlocked &mdash; see the new tab</span>
         <span className={"toast" + (spatialToast ? " show" : "")}>Spatial audio on &mdash; best with headphones</span>
+        <span className={"toast" + (playAlongToast ? " show" : "")}>Play along &mdash; tap height for pitch, hold for a glitch</span>
         {installPrompt && (
           <button className="ghost-btn" onClick={install}><InstallIcon /> Install app</button>
         )}

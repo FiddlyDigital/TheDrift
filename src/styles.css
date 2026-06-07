@@ -764,7 +764,8 @@ body {
   border: none; padding: 0;
   background: #000;
 }
-.stage.immersive .field { height: 100vh; }
+.stage.immersive .field { height: 100vh; touch-action: none; }
+.stage.immersive.play-along .field { cursor: crosshair; }
 .stage.immersive .field-gl { top: 0; height: 100vh; }
 .stage.immersive .field-hint,
 .stage.immersive .idle-veil { display: none; }

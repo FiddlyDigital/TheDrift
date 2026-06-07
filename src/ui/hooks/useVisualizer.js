@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { ENGINE } from '../../engine/index.js';
 import { BREATH_PATTERNS } from '../constants.js';
 import { createRenderer } from '../canvas.js';
@@ -18,6 +18,17 @@ export function useVisualizer({ canvasRef, glCanvasRef, breathRingRef, breathLab
   const bellPulseRef = useRef(null);
   const cameraRef = useRef(null);
   const glRendererRef = useRef(null);
+
+  // imperative ripple emitter, so a tap (play-along) can ring at the touch
+  // point. Pushes into the same ripplesRef the renderer animates each frame.
+  const emitRipple = useCallback((x, y, max, str, delay) => {
+    ripplesRef.current.push({
+      x: x, y: y,
+      t0: (ENGINE.ctx ? ENGINE.ctx.currentTime : 0) + (delay || 0),
+      max: max == null ? 80 : max,
+      str: str == null ? 1 : str,
+    });
+  }, []);
 
   useEffect(() => {
     const store = useDriftStore;
@@ -101,4 +112,6 @@ export function useVisualizer({ canvasRef, glCanvasRef, breathRingRef, breathLab
       if (glRendererRef.current) { glRendererRef.current.destroy(); glRendererRef.current = null; }
     };
   }, [canvasRef, glCanvasRef, breathRingRef, breathLabelRef, breathCountRef]);
+
+  return { emitRipple };
 }

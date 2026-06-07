@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { useDriftStore } from './store/useDriftStore.js';
 import { useVisualizer } from './hooks/useVisualizer.js';
+import { usePlayAlong } from './hooks/usePlayAlong.js';
 import { useTimers } from './hooks/useTimers.js';
 import { useMidiBridge } from './hooks/useMidiBridge.js';
 import { useMediaSession } from './hooks/useMediaSession.js';
@@ -24,6 +25,8 @@ import { Sheets } from './views/sheets/Sheets.jsx';
 export default function App() {
   const immersive = useDriftStore((s) => s.immersive);
   const vizUiVisible = useDriftStore((s) => s.vizUiVisible);
+  const playAlong = useDriftStore((s) => s.playAlong);
+  const vizMode = useDriftStore((s) => s.vizMode);
 
   // DOM refs owned by the view; the canvases + 3D breath overlay are driven by
   // the visualizer loop, so they're created here and passed where needed.
@@ -35,7 +38,8 @@ export default function App() {
 
   // effect hooks (each reads/drives the store)
   usePersistence();
-  useVisualizer({ canvasRef, glCanvasRef, breathRingRef, breathLabelRef, breathCountRef });
+  const { emitRipple } = useVisualizer({ canvasRef, glCanvasRef, breathRingRef, breathLabelRef, breathCountRef });
+  usePlayAlong({ canvasRef, emitRipple });
   useTimers();
   useMidiBridge();
   useMediaSession();
@@ -44,7 +48,7 @@ export default function App() {
   useImmersiveIdle();
 
   return (
-    <div className={"stage" + (immersive ? " immersive" : "") + (immersive && !vizUiVisible ? " hide-cursor" : "")}>
+    <div className={"stage" + (immersive ? " immersive" : "") + (immersive && !vizUiVisible ? " hide-cursor" : "") + (playAlong && immersive && vizMode === "mandala" ? " play-along" : "")}>
       <Header />
       <Field canvasRef={canvasRef} glCanvasRef={glCanvasRef} />
       <Legend />

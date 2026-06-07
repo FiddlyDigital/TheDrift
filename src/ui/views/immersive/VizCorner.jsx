@@ -1,7 +1,7 @@
 import React from 'react';
 import { useDriftStore } from '../../store/useDriftStore.js';
 import { BREATH_ORDER, BREATH_PATTERNS } from '../../constants.js';
-import { VizIcon, CubeIcon, HeadphonesIcon, FullscreenIcon, FullscreenExitIcon } from '../../icons.jsx';
+import { VizIcon, CubeIcon, HeadphonesIcon, RaindropIcon, FullscreenIcon, FullscreenExitIcon } from '../../icons.jsx';
 
 // Top-corner chips in the immersive view: breath patterns, mandala/3D toggle,
 // spatial-audio and fullscreen.
@@ -14,6 +14,8 @@ export function VizCorner() {
   const setVizMode = useDriftStore((s) => s.setVizMode);
   const spatial = useDriftStore((s) => s.spatial);
   const toggleSpatial = useDriftStore((s) => s.toggleSpatial);
+  const playAlong = useDriftStore((s) => s.playAlong);
+  const togglePlayAlong = useDriftStore((s) => s.togglePlayAlong);
   const isFullscreen = useDriftStore((s) => s.isFullscreen);
   const toggleFullscreen = useDriftStore((s) => s.toggleFullscreen);
 
@@ -29,6 +31,14 @@ export function VizCorner() {
             </button>
           ))}
         </div>
+      )}
+      {vizMode === "mandala" && (
+        <button className={"viz-chip mini" + (playAlong ? " active" : "")}
+          onClick={togglePlayAlong}
+          aria-label={playAlong ? "Play along on" : "Play along off"}
+          title={playAlong ? "Play along on — tap the mandala" : "Play along — tap to drop notes"}>
+          <RaindropIcon />
+        </button>
       )}
       <button className={"viz-chip mini" + (vizMode === "space" ? " active" : "")}
         onClick={() => setVizMode((m) => (m === "space" ? "mandala" : "space"))}

@@ -1,6 +1,11 @@
 import React from 'react';
 
 // ---- icons -----------------------------------------------------------
+export const RaindropIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
+    <path d="M12 3.5c3 3.6 5.2 6.6 5.2 9.4a5.2 5.2 0 0 1-10.4 0c0-2.8 2.2-5.8 5.2-9.4z" />
+  </svg>
+);
 export const PlayIcon = () => (
   <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z" /></svg>
 );
