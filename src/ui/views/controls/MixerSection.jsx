@@ -2,7 +2,7 @@ import React from 'react';
 import { useDriftStore } from '../../store/useDriftStore.js';
 import { Dial } from '../../components/Dial.jsx';
 import { HeadphonesIcon } from '../../icons.jsx';
-import { pctLabel, texlevelLabel, binlevelLabel, glueLabel } from '../../labels.js';
+import { pctLabel, texlevelLabel, binlevelLabel, glueLabel, sidechainLabel } from '../../labels.js';
 
 // Per-layer levels under one master, plus the spatial-audio toggle.
 export function MixerSection() {
@@ -27,6 +27,8 @@ export function MixerSection() {
           min={0} max={1} step={0.01} onChange={(v) => update("binlevel", v)} />
         <Dial name="Glue" value={params.glue} label={glueLabel(params.glue)}
           min={0} max={1} step={0.01} onChange={(v) => update("glue", v)} />
+        <Dial name="Sidechain" value={params.sidechain == null ? 0 : params.sidechain} label={sidechainLabel(params.sidechain == null ? 0 : params.sidechain)}
+          min={0} max={1} step={0.01} onChange={(v) => update("sidechain", v)} />
       </div>
       <div className="mood-row spatial-row">
         <span className="row-label">Spatial</span>

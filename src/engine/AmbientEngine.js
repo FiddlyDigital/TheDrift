@@ -91,6 +91,7 @@ function AmbientEngine() {
     evolve: 0.4,    // autonomous slow drift — re-voices the field over time 0..1
     journey: 0,     // autonomous mood migration over time 0..1 (0 = off)
     glue: 0.25,     // output compression amount 0..1 (transparent..pumping)
+    sidechain: 0,   // struck strikes duck the drones + ambience 0..1 (0 = off)
     tuning: 440,    // reference pitch A4 in Hz (432 healing / 444 = C528 / 440 std)
     binaural: "off",// binaural-beat band id (off/delta/theta/alpha/beta)
     binlevel: 0.4,  // binaural tone level 0..1
@@ -141,6 +142,13 @@ AmbientEngine.prototype.ensureContext = function (injected) {
   this.fieldOut.gain.value = 1;
   this.fieldOut.connect(this.bus);
   this._fading = this._fading || [];
+
+  // generative sidechain: sustained (drone) voices route through padOut, a duck
+  // gain that struck strikes dip so the pads breathe around the bells. It feeds
+  // the current field's fieldOut so scene crossfades still fade the pads.
+  this.padOut = ctx.createGain();
+  this.padOut.gain.value = 1;
+  this.padOut.connect(this.fieldOut);
 
   this.warm = ctx.createBiquadFilter();
   this.warm.type = "lowpass";
@@ -245,7 +253,12 @@ AmbientEngine.prototype.ensureContext = function (injected) {
   // through warmth + compression + master so it obeys volume and sleep fade
   this.textureBus = ctx.createGain();
   this.textureBus.gain.value = this.params.texlevel;
-  this.textureBus.connect(this.warm);
+  // textureDuck sits after the ambience level so the sidechain can dip the bed
+  // without fighting the Ambience mixer fader.
+  this.textureDuck = ctx.createGain();
+  this.textureDuck.gain.value = 1;
+  this.textureBus.connect(this.textureDuck);
+  this.textureDuck.connect(this.warm);
   this._activeTex = (this.params.texture || "").split(".").filter(Boolean);
 
   // any voices generated before the context existed (initial setParams)
@@ -541,13 +554,17 @@ AmbientEngine.prototype.regenerate = function (opts) {
   // route the new field and seed each voice's first autonomous mutation time
   const ev = this.params.evolve || 0;
   const out = crossfade ? this._newFieldOut() : this.fieldOut;
+  const padOut = crossfade ? this._newPadOut(out) : this.padOut;
   for (const v of voices) {
-    v._out = out;
+    const inst = INSTRUMENTS[v.inst];
+    // sustained drones duck (padOut); struck/glitch voices trigger the duck, so
+    // they must bypass it (route straight to the field out).
+    v._out = (inst && inst.sustained) ? padOut : out;
     v._mutateAt = now + (24 + rng() * 44) / (0.3 + ev);
     if (this.spatial && this.ctx) this._buildVoiceSpatial(v);
   }
 
-  if (crossfade) this._beginCrossfade(out);
+  if (crossfade) { this._beginCrossfade(out); this.padOut = padOut; }
   this.voices = voices;
 };
 
@@ -621,6 +638,47 @@ AmbientEngine.prototype._newFieldOut = function () {
   g.gain.value = 0.0001;
   g.connect(this.bus);
   return g;
+};
+
+// point each current voice at the right field output: drones through the
+// duckable padOut, everything else straight to fieldOut. Used when the initial
+// field (built before the AudioContext existed) first starts playing.
+AmbientEngine.prototype._rerouteVoices = function () {
+  if (!this.voices) return;
+  for (const v of this.voices) {
+    const inst = INSTRUMENTS[v.inst];
+    v._out = (inst && inst.sustained) ? this.padOut : this.fieldOut;
+  }
+};
+
+// a fresh pad-duck gain for a new field, feeding that field's out so its drones
+// fade with the crossfade while still being duckable by strikes.
+AmbientEngine.prototype._newPadOut = function (fieldGain) {
+  const g = this.ctx.createGain();
+  g.gain.value = 1;
+  g.connect(fieldGain);
+  return g;
+};
+
+// generative sidechain: dip the drone pads + ambience on a struck strike, then
+// swell back. Feed-forward (scheduled at the strike), so it is deterministic and
+// survives the offline WAV export. Heavier (louder, lower) strikes duck deeper.
+AmbientEngine.prototype._duck = function (time, vel, midi) {
+  const amt = clamp(this.params.sidechain || 0, 0, 1);
+  if (amt <= 0.001) return;
+  const pitchW = clamp(1 - (midi - 40) / 40, 0.3, 1);   // low/heavy -> ~1, high -> ~0.3
+  const depth = amt * (vel == null ? 1 : vel) * pitchW; // 0..~1
+  const tgtTex = Math.max(0.1, 1 - depth * 0.85);       // ambience can duck deep
+  const tgtPad = Math.max(0.3, 1 - depth * 0.55);       // drones duck gentler
+  const atkTC = 0.012, relTC = 0.18, hold = 0.04;       // fast dip, ~0.5s swell back
+  if (this.textureDuck) {
+    this.textureDuck.gain.setTargetAtTime(tgtTex, time, atkTC);
+    this.textureDuck.gain.setTargetAtTime(1, time + hold, relTC);
+  }
+  if (this.padOut) {
+    this.padOut.gain.setTargetAtTime(tgtPad, time, atkTC);
+    this.padOut.gain.setTargetAtTime(1, time + hold, relTC);
+  }
 };
 
 // park the outgoing field so the scheduler keeps feeding its tails while it
@@ -1053,6 +1111,7 @@ AmbientEngine.prototype._synthStruck = function (v, time, opts, inst) {
     * (opts.durScale == null ? 1 : opts.durScale);
   const onset = time + (Math.random() - 0.5) * 0.012;
   const vel = (opts.vel == null ? 1 : opts.vel) * inst.gain;
+  this._duck(onset, opts.vel == null ? 1 : opts.vel, v.midi);
 
   const g = ctx.createGain();
   const peak = 0.15 * vel * (0.78 + Math.random() * 0.22);
@@ -1406,7 +1465,7 @@ AmbientEngine.prototype.play = function () {
   this.ensureContext();
   if (this.ctx.state === "suspended") this.ctx.resume();
   if (!this.voices.length) this.regenerate();
-  else this._rebase();
+  else { this._rebase(); this._rerouteVoices(); }
   // make sure the active field is at full level (e.g. resuming mid-crossfade)
   if (this.fieldOut) {
     const now = this.ctx.currentTime;
@@ -1518,6 +1577,12 @@ AmbientEngine.prototype.pause = function () {
   if (this._timer) { clearInterval(this._timer); this._timer = null; }
   this._stopAllTextures();
   this._applyBinaural(); // silence the beat while paused
+  // release the sidechain so the pads/ambience don't resume stuck mid-duck
+  if (this.ctx) {
+    const t = this.ctx.currentTime;
+    if (this.textureDuck) { this.textureDuck.gain.cancelScheduledValues(t); this.textureDuck.gain.setValueAtTime(1, t); }
+    if (this.padOut) { this.padOut.gain.cancelScheduledValues(t); this.padOut.gain.setValueAtTime(1, t); }
+  }
   // drop any in-flight crossfade tails so a later resume starts clean
   if (this._fading && this._fading.length) {
     for (let i = 0; i < this._fading.length; i++) {
@@ -1556,6 +1621,7 @@ AmbientEngine.prototype.strikeBell = function (opts) {
   this.lastBell = now;
   this.lastBellVel = vel;
   this.bellSeq++;
+  this._duck(now, vel, midi);   // a heavy bell breathes the pads + ambience aside
 
   const g = ctx.createGain();
   const peak = 0.26 * vel;
@@ -1659,7 +1725,7 @@ AmbientEngine.prototype.set = function (key, value) {
     if (this.ctx) { this._buildImpulse(); this._applySpace(); }
     return;
   }
-  if (key === "color" || key === "stutter" || key === "bloom" || key === "evolve") return; // read live
+  if (key === "color" || key === "stutter" || key === "bloom" || key === "evolve" || key === "sidechain") return; // read live
   if (key === "glue") { this._applyGlue(); return; }
   if (key === "tuning") {
     // retune the whole field live — subsequent strikes pick up the new

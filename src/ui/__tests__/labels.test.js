@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   tempoLabel, stutterLabel, bloomLabel, driftLabel,
   registerLabel, spaceLabel, colorLabel, evolveLabel,
-  journeyLabel, glueLabel, binlevelLabel, pctLabel,
+  journeyLabel, glueLabel, sidechainLabel, binlevelLabel, pctLabel,
 } from '../labels.js';
 
 const LABEL_CASES = [
@@ -16,6 +16,7 @@ const LABEL_CASES = [
   { fn: evolveLabel,    cases: [[0, 'fixed'], [0.1, 'slow drift'], [0.4, 'wandering'], [0.7, 'shifting'], [1, 'restless']] },
   { fn: journeyLabel,   cases: [[0, 'off'], [0.1, 'unfolding'], [0.5, 'drifting'], [0.7, 'roaming'], [1, 'restless']] },
   { fn: glueLabel,      cases: [[0, 'transparent'], [0.1, 'gentle'], [0.4, 'firm'], [0.7, 'pressed'], [1, 'pumping']] },
+  { fn: sidechainLabel, cases: [[0, 'off'], [0.1, 'subtle'], [0.45, 'breathing'], [0.7, 'pumping'], [1, 'slamming']] },
   { fn: binlevelLabel,  cases: [[0, 'faint'], [0.3, 'soft'], [0.5, 'present'], [1, 'strong']] },
 ];
 

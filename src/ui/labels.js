@@ -77,6 +77,13 @@ export function glueLabel(v) {
   if (v < 0.84) return "pressed";
   return "pumping";
 }
+export function sidechainLabel(v) {
+  if (v < 0.04) return "off";
+  if (v < 0.3) return "subtle";
+  if (v < 0.6) return "breathing";
+  if (v < 0.85) return "pumping";
+  return "slamming";
+}
 export function binlevelLabel(v) {
   if (v < 0.18) return "faint";
   if (v < 0.45) return "soft";
@@ -106,4 +113,5 @@ export const DIAL_HINTS = {
   "Ambience":  "Level of the background bed — rain, vinyl, wind, fire.",
   "Beat":      "Level of the binaural tones. Use headphones.",
   "Glue":      "Bonds the layers together. Higher, warmer and more cohesive.",
+  "Sidechain": "Bells & struck notes duck the drones and ambience, so the mix breathes around each strike.",
 };
