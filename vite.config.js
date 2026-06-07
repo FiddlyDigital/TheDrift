@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite';
 import preact from '@preact/preset-vite';
-import { viteObfuscateFile as obfuscatorPlugin } from 'vite-plugin-obfuscator';
 
 export default defineConfig(() => ({
   base: process.env.BASE_URL || '/',
@@ -19,13 +18,6 @@ export default defineConfig(() => ({
     // preact/compat aliases (react, react-dom, react-dom/client, react/jsx-runtime)
     // are wired by the preset for both the build and the vitest run.
     preact(),
-    obfuscatorPlugin({
-      rotateStringArray: true,
-      stringArray: true,
-      stringArrayThreshold: 0.75,
-      identifierNamesGenerator: 'hexadecimal',
-      selfDefending: false,
-    }),
   ],
   build: {
     minify: 'terser',
