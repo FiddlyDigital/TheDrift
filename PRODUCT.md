@@ -146,8 +146,17 @@ crossfade).
 | Master | 0–1 | Output volume |
 | Seed | integer | Reproducible field identity |
 
-Controls are grouped into panels: **Scenes, Voice, Motion, Space, Atmosphere,
-Mixer** (and **Atelier** when unlocked).
+**Where the controls live.** The Drift is *immersive-first*: the listener lands
+in the full-screen mandala and stays there — there is no separate editor screen.
+The parameter panels — **Scenes, Voice, Motion, Space, Atmosphere, Mixer** (and
+**Atelier** when unlocked) — live in a **Sound & tuning console** that slides in
+over the mandala (a right-hand drawer on desktop, a bottom sheet on mobile) and
+also carries the seed / save / share actions. Everything *experiential* sits on
+a floating **dock** instead: play/pause (the mandala's own centre), the breath
+guide, the live "feel" toggles (play-along, spatial audio, entrain-light), and
+the Session / Journey / About sheets. On phones the feel toggles and About fold
+into a **More** menu so the dock stays narrow. A top-corner control toggles the
+2D mandala / 3D space view and fullscreen.
 
 ---
 
@@ -184,7 +193,8 @@ on randomized legs (≈2.5–5 minutes each), never stopping.
   30 min to 8 hours (nap to full night).
 - **Breath guide.** An animated ring paced to one of three patterns — Coherent
   (5.5/min), Box (4-4-4-4), or 4-7-8 — with a phase label and countdown. Renders
-  in both the 2D and 3D views.
+  in both the 2D and 3D views. Started, paced, and given its audible swell from
+  the dock's **Breathe** popover.
 
 ### Ambience textures (9)
 
@@ -208,8 +218,8 @@ A4 reference pitch: **415 Hz** (baroque), **432 Hz** (natural), **440 Hz**
 
 ## 7. Atelier — hidden expert mode
 
-Unlocked by triple-tapping the title on the main view; remembered per device. It
-adds an **Atelier** panel that turns the generator into a hand-authored
+Unlocked by triple-tapping the title in the Sound panel; remembered per device.
+It adds an **Atelier** panel that turns the generator into a hand-authored
 instrument while preserving the drift model.
 
 - **Custom harmony.** Pick a **key** (12 chromatic roots), a **mode** (24
@@ -293,8 +303,8 @@ Three views, all driven by the live audio state.
 
 ### Play along (Raindrop)
 
-An optional mode (a toggle in the immersive mandala, off by default, remembered
-per device) that lets the listener lightly play along with the generative field
+An optional mode (a toggle in the dock, off by default, remembered per device)
+that lets the listener lightly play along with the generative field
 by tapping the full-screen mandala. **Position is musical:** vertical position
 sets pitch (top = high, bottom = low, quantised to the active scale so it stays
 consonant) and horizontal position sets stereo pan. A **tap** drops a single
@@ -307,9 +317,11 @@ scheduler, so the running loops keep drifting undisturbed. It is gated to the
 immersive mandala while playing, so stray taps (e.g. to reveal the controls)
 stay silent.
 
-**Immersive behavior.** UI auto-hides after 3.2 s of inactivity, the cursor
-hides, a screen wake lock is requested while playing, the view auto-enters after
-90 s idle, a fullscreen toggle is provided, and Escape exits.
+**Immersive behavior.** The mandala is the home view — there is no separate
+"player" screen to enter or leave. The on-screen chrome (dock and corner)
+auto-hides after 3.2 s of inactivity and the cursor hides with it; any movement
+restores them. A screen wake lock is requested while playing, a fullscreen
+toggle sits in the corner, and Escape closes the Sound console.
 
 ---
 
@@ -365,8 +377,10 @@ stereo placement is used.
 - No backend server; nothing is uploaded.
 - No analytics or telemetry.
 - All state lives in the browser: the URL hash (for sharing) and local storage
-  (config, library, and preferences such as volume, breath pattern, unlocked
-  Atelier, spatial-audio toggle, and the play-along toggle).
+  (config, library, and preferences such as volume, breath pattern / pace /
+  audible swell, beat-delivery mode, unlocked Atelier, the spatial-audio,
+  play-along, and entrain-light toggles, and whether the one-time onboarding
+  hint has been seen).
 
 ---
 

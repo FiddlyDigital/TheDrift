@@ -32,7 +32,7 @@ Output goes to `dist/`. The bundle is:
 
 - **Minified** via Terser (2-pass, console stripped)
 - **No web fonts** — UI uses a system serif/mono stack, so there's no render-blocking font fetch
-- ~163 KB JS / ~50 KB gzip
+- ~177 KB JS / ~54 KB gzip
 
 Deploy the contents of `dist/` to any static host. Pushing to `main` runs the
 CI/CD pipeline (tests → build → deploy to GitHub Pages).
@@ -40,6 +40,16 @@ CI/CD pipeline (tests → build → deploy to GitHub Pages).
 ---
 
 ## Features
+
+### Interface
+The Drift is **immersive-first**: you land straight in the full-screen mandala and stay there. A floating **dock** at the bottom is the remote for the whole experience (play/pause is the mandala's own centre):
+
+- **Sound** opens the *Sound & tuning* console — a panel that slides in over the mandala (a bottom sheet on mobile) holding the tabbed control groups (Scenes, Voice, Motion, Space, Atmosphere, Mixer, and Atelier when unlocked) plus seed / save / share.
+- **Breathe** is a popover to start the breath guide and choose its pattern, pace, and audible swell.
+- **Feel toggles** — play-along, spatial audio, and entrain-light. On phones these (and About) collapse into a **⋯ More** menu so the dock stays uncluttered.
+- **Session / Journey / About** open as calm paper sheets over the field.
+
+The top corner toggles **2D mandala ↔ 3D space** and fullscreen. The chrome auto-hides after a few seconds of stillness and returns on the first move; transient confirmations stack in a single toast queue above the dock; a one-time coachmark orients first-time listeners.
 
 ### Sound engine
 - **Synthesized instruments (22)** — all audio generated in the browser via the Web Audio API, no samples:
@@ -100,13 +110,13 @@ Timed arcs that travel between scenes with smooth crossfades: Into Sleep · Deep
 - **Panel view** — stacked bars showing loop lengths, playheads, stereo-drift plot, and instrument glyphs.
 
 ### Play along (Raindrop)
-An optional mode (toggle in the immersive mandala, off by default) that lets you tap the full-screen mandala to drop sound into the field without disturbing the generative flow. **Vertical position sets pitch** (top = high, bottom = low, quantised to the current scale) and **horizontal position sets stereo pan**. A tap drops a single transient note; a **long-press or two-finger touch** drops a short glitch gesture. Each tap rings a ripple at the touch point, and the dropped note borrows the instrument of the nearest-pitched playing voice so it blends in. Notes are one-shots routed through the shared effects chain — the running loops keep going untouched.
+An optional mode (a toggle in the dock, off by default) that lets you tap the full-screen mandala to drop sound into the field without disturbing the generative flow. **Vertical position sets pitch** (top = high, bottom = low, quantised to the current scale) and **horizontal position sets stereo pan**. A tap drops a single transient note; a **long-press or two-finger touch** drops a short glitch gesture. Each tap rings a ripple at the touch point, and the dropped note borrows the instrument of the nearest-pitched playing voice so it blends in. Notes are one-shots routed through the shared effects chain — the running loops keep going untouched.
 
 ### 3D spatial audio
 An optional HRTF mode (headphones, off by default) that places each voice's sound where its orb appears in the 3D orrery. In the 3D view the soundstage follows the camera — rotating the orrery rotates the sound field. The orbit geometry is shared between the renderer and the audio engine so picture and sound agree.
 
 ### Atelier (hidden expert mode)
-Unlocked by triple-tapping the title on the main view. Turns the generator into a hand-authored instrument:
+Unlocked by triple-tapping the title in the Sound panel. Turns the generator into a hand-authored instrument:
 - **Custom harmony** — pick a key (12 roots) and a mode (24 scales, from the diatonic modes through exotic, world, and symmetric scales), and toggle individual scale degrees.
 - **Voice loom** — a per-loop editor: set each loop's instrument, note (or "roam"), and length; capture the live field into editable rows; lock voices so they hold while the rest keep drifting.
 - **Web MIDI** — map a controller's knobs/faders to the dials and mixer levels, and buttons/keys to transport (Play/Pause, Start, Stop) and scenes (next/prev, reshuffle), via a MIDI-learn flow. Chromium-based browsers only.
@@ -148,15 +158,19 @@ src/
       librarySlice.js   # saved-library (Yours)
       midiSlice.js      # MIDI map + learn
       exportSlice.js    # WAV export
-      uiSlice.js        # immersive/sheets/welcome/toggles (breath, spatial, play-along)
+      uiSlice.js        # console drawer/sheets/welcome/coachmark/toggles
+                        #   (breath, spatial, play-along, entrain)
     hooks/              # effect hooks (visualizer loop, timers, MIDI, media session,
                         #   wake lock, install prompt, immersive idle, persistence,
                         #   usePlayAlong — tap-to-drop)
     views/              # presentational components
-      Field.jsx, Header.jsx, Footer.jsx, Legend.jsx, WelcomeScreen.jsx
+      Field.jsx, WelcomeScreen.jsx
+      SoundConsole.jsx  # the slide-over "Sound & tuning" drawer (tabs + seed/share)
+      ToastHost.jsx     # consolidated toast queue
       controls/         # control panels (Scenes, Voice, Motion, Space, Atmosphere,
                         #   Mixer, Atelier) + ChipGroup primitive + atelier/ subviews
-      immersive/        # mandala core, dock, viz corner, breath/status overlays
+      immersive/        # mandala core, dock (+ Breathe / More popovers), viz corner,
+                        #   breath/status overlays, onboarding coachmark
       sheets/           # Journey / Session / Export / Info sheets
     components/         # Slider, Dial
     __tests__/          # labels, midi, store, app smoke, chipgroup, atelier, playalong
