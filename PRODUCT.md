@@ -291,6 +291,22 @@ Three views, all driven by the live audio state.
   touch) to rotate; pinch or scroll to zoom. Toggle between Mandala and 3D
   Space.
 
+### Play along (Raindrop)
+
+An optional mode (a toggle in the immersive mandala, off by default, remembered
+per device) that lets the listener lightly play along with the generative field
+by tapping the full-screen mandala. **Position is musical:** vertical position
+sets pitch (top = high, bottom = low, quantised to the active scale so it stays
+consonant) and horizontal position sets stereo pan. A **tap** drops a single
+transient note; a **long-press or two-finger touch** drops a short glitch
+gesture (a rapid arpeggio/birdsong/trill run). Each tap also rings a ripple at
+the touch point, and the dropped note borrows the instrument of the
+nearest-pitched playing voice so it blends in. Drops are one-shots routed
+through the shared reverb/compression/limiter chain; they never touch the
+scheduler, so the running loops keep drifting undisturbed. It is gated to the
+immersive mandala while playing, so stray taps (e.g. to reveal the controls)
+stay silent.
+
 **Immersive behavior.** UI auto-hides after 3.2 s of inactivity, the cursor
 hides, a screen wake lock is requested while playing, the view auto-enters after
 90 s idle, a fullscreen toggle is provided, and Escape exits.
@@ -350,23 +366,27 @@ stereo placement is used.
 - No analytics or telemetry.
 - All state lives in the browser: the URL hash (for sharing) and local storage
   (config, library, and preferences such as volume, breath pattern, unlocked
-  Atelier, and spatial-audio toggle).
+  Atelier, spatial-audio toggle, and the play-along toggle).
 
 ---
 
 ## 13. Technical summary
 
-- **UI:** React 18.
+- **UI:** Preact (via `preact/compat`) with a Zustand store split into slices.
+  The app uses only standard React APIs, so it builds against Preact for a
+  smaller runtime.
 - **Audio & effects:** Web Audio API only (synthesis, convolver reverb,
   compressor, stereo and HRTF panning, offline render). No external audio
   libraries, no samples.
 - **Visuals:** 2D Canvas (panel, mandala) and raw WebGL (3D space), no 3D
   library.
-- **Build:** Vite 5, Terser minification, JavaScript obfuscation.
+- **Build:** Vite 5, Terser minification; a system font stack (no bundled or
+  web-served fonts).
 - **Structure:** the engine (synthesis, scheduler, generative logic) is separate
   from the UI; harmony/instrument data and shared orbit geometry are standalone
   modules.
-- **Tests:** unit tests (Vitest) cover the pure utilities, label functions,
-  Atelier parsing, and orbit geometry.
+- **Tests:** unit tests (Vitest + @testing-library/preact) cover the pure
+  utilities, label functions, Atelier parsing, orbit geometry, the
+  position→pitch/pan mapping, store behaviour, and component rendering.
 - **Delivery:** GitHub Actions runs tests → build → deploy to GitHub Pages on
   push to `main`.

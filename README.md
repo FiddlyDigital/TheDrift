@@ -31,8 +31,8 @@ npm run build
 Output goes to `dist/`. The bundle is:
 
 - **Minified** via Terser (2-pass, console stripped)
-- **Obfuscated** via `vite-plugin-obfuscator` (hex identifiers, string-array shuffling)
-- ~560 KB JS / ~147 KB gzip
+- **No web fonts** — UI uses a system serif/mono stack, so there's no render-blocking font fetch
+- ~163 KB JS / ~50 KB gzip
 
 Deploy the contents of `dist/` to any static host. Pushing to `main` runs the
 CI/CD pipeline (tests → build → deploy to GitHub Pages).
@@ -99,6 +99,9 @@ Timed arcs that travel between scenes with smooth crossfades: Into Sleep · Deep
 - **Orbital mandala** — full-screen 2D view; each loop is a rotating hand that blooms on strike, with threads that light when loops align. Mood-tinted and audio-reactive.
 - **Panel view** — stacked bars showing loop lengths, playheads, stereo-drift plot, and instrument glyphs.
 
+### Play along (Raindrop)
+An optional mode (toggle in the immersive mandala, off by default) that lets you tap the full-screen mandala to drop sound into the field without disturbing the generative flow. **Vertical position sets pitch** (top = high, bottom = low, quantised to the current scale) and **horizontal position sets stereo pan**. A tap drops a single transient note; a **long-press or two-finger touch** drops a short glitch gesture. Each tap rings a ripple at the touch point, and the dropped note borrows the instrument of the nearest-pitched playing voice so it blends in. Notes are one-shots routed through the shared effects chain — the running loops keep going untouched.
+
 ### 3D spatial audio
 An optional HRTF mode (headphones, off by default) that places each voice's sound where its orb appears in the 3D orrery. In the 3D view the soundstage follows the camera — rotating the orrery rotates the sound field. The orbit geometry is shared between the renderer and the audio engine so picture and sound agree.
 
@@ -124,24 +127,40 @@ src/
     constants.js        # MOODS, SCALES, INSTRUMENTS, ENSEMBLES, BINAURAL data
     utils.js            # RNG, midiToFreq, clamp, noteName
     orbit.js            # shared orbit geometry (3D viz + spatial audio)
-    AmbientEngine.js    # audio engine: synthesis, scheduler, generative logic
+    AmbientEngine.js    # audio engine: synthesis, scheduler, generative logic, dropNote
     index.js            # singleton export
     __tests__/          # utils, atelier (scale/voice parsing), orbit
   ui/
+    App.jsx             # thin shell: owns canvas refs, wires hooks, composes views
     labels.js           # dial label functions
-    constants.js        # UI constants (scenes, journeys, textures, brainwaves…)
+    format.js           # display formatters (note/mood/ensemble names)
+    constants.js        # UI constants (scenes, journeys, textures, brainwaves, breath…)
     persistence.js      # URL hash + localStorage read/write
+    playAlong.js        # pure tap -> {pitch, pan} mapping for Play along
     glyphs.jsx          # instrument glyphs (canvas + DOM legend) + mood palettes
     icons.jsx           # SVG icon components
-    canvas.js           # 2D renderer factory (mandala + panel)
+    canvas.js           # 2D renderer factory (mandala + panel + ripples)
     webgl.js            # WebGL renderer (3D "Drift Space" orrery)
     midi.js             # Web MIDI manager + message parser
-    components/
-      Slider.jsx
-      Dial.jsx
-    App.jsx             # main React component
-    __tests__/          # labels, midi
-  main.jsx              # entry point + service worker registration
+    store/              # Zustand store, split into slices
+      useDriftStore.js  # composes the slices into one store
+      coreSlice.js      # params, transport, scenes, journey, drift, timers
+      librarySlice.js   # saved-library (Yours)
+      midiSlice.js      # MIDI map + learn
+      exportSlice.js    # WAV export
+      uiSlice.js        # immersive/sheets/welcome/toggles (breath, spatial, play-along)
+    hooks/              # effect hooks (visualizer loop, timers, MIDI, media session,
+                        #   wake lock, install prompt, immersive idle, persistence,
+                        #   usePlayAlong — tap-to-drop)
+    views/              # presentational components
+      Field.jsx, Header.jsx, Footer.jsx, Legend.jsx, WelcomeScreen.jsx
+      controls/         # control panels (Scenes, Voice, Motion, Space, Atmosphere,
+                        #   Mixer, Atelier) + ChipGroup primitive + atelier/ subviews
+      immersive/        # mandala core, dock, viz corner, breath/status overlays
+      sheets/           # Journey / Session / Export / Info sheets
+    components/         # Slider, Dial
+    __tests__/          # labels, midi, store, app smoke, chipgroup, atelier, playalong
+  main.jsx              # entry point (error boundary) + service worker registration
   styles.css
 
 public/                 # icons, manifest.webmanifest, sw.js
@@ -152,13 +171,15 @@ PRODUCT.md              # full product/feature description
 
 ## Tech stack
 
-- **React 18** — UI
+- **Preact** (via `preact/compat`) — UI; the app uses only standard React APIs, so it builds against Preact for a much smaller runtime
+- **Zustand** — state management (store split into slices)
 - **Web Audio API** — all synthesis and effects, incl. HRTF spatial audio (no external audio libs, no samples)
 - **WebGL** — 3D visualization (raw, no 3D library)
 - **Web MIDI API** — external controller mapping
 - **Vite 5** — build tooling
-- **Terser** + **vite-plugin-obfuscator** — minification and obfuscation
-- **Vitest** — unit tests
+- **Terser** — minification
+- **System font stack** — no bundled or web-served fonts
+- **Vitest** + **@testing-library/preact** — unit tests
 - **GitHub Actions** — CI/CD (test → build → deploy to GitHub Pages)
 
 ---
