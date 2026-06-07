@@ -930,6 +930,29 @@ body {
 .dock-icon svg { width: 19px; height: 19px; }
 .dock-icon:hover { color: #fff; background: rgba(255, 255, 255, 0.07); }
 
+/* feel toggles: inline on wide screens, collapsed into More on mobile */
+.dock-feel { display: flex; align-items: center; gap: 6px; }
+.dock-more { display: none; }
+.dock-more-pop {
+  left: auto; right: -6px; transform: none; width: 226px;
+  animation: dockPopFade .22s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.dock-more-pop::after { left: auto; right: 16px; transform: none; }
+@keyframes dockPopFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.dock-more-row {
+  display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.03em;
+  padding: 10px 11px; border-radius: 10px; cursor: pointer;
+  background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.78); transition: background .18s ease, border-color .18s ease, color .18s ease;
+}
+.dock-more-row:hover { color: #fff; border-color: rgba(255, 255, 255, 0.34); }
+.dock-more-row.on { color: var(--accent); border-color: rgba(176, 97, 58, 0.5); }
+.dock-more-ico { display: grid; place-items: center; flex: none; }
+.dock-more-ico svg { width: 18px; height: 18px; }
+.dock-more-state { margin-left: auto; font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); }
+.dock-more-row:not(.on) .dock-more-state { color: rgba(255, 255, 255, 0.38); }
+
 /* slim top-right corner: fullscreen + breath patterns */
 .viz-corner {
   position: fixed; top: 22px; right: 22px; z-index: 70;
@@ -1022,10 +1045,14 @@ body {
 .mandala-btn svg { width: 16px; height: 16px; }
 
 @media (max-width: 560px) {
-  .dock { gap: 2px; padding: 8px 10px; bottom: 52px; }
-  .dock-item { padding: 5px 8px; }
+  .dock { gap: 3px; padding: 8px 10px; bottom: calc(40px + env(safe-area-inset-bottom)); }
+  .dock-item { padding: 5px 9px; }
   .dock-item svg { width: 18px; height: 18px; }
   .dock-time { display: none; }
+  /* collapse the feel toggles + About into the More popover */
+  .dock-feel { display: none; }
+  .dock-more { display: flex; }
+  .dock-sep { display: none; }
   .sheet { padding: 28px 22px 24px; }
   .info-title { font-size: 42px; }
 }
@@ -1427,9 +1454,19 @@ body {
     box-shadow: 0 -24px 80px rgba(0, 0, 0, 0.45);
   }
   .console.open { transform: translateY(0); }
-  .console-head { padding: 20px 20px 14px; }
-  .console-title { font-size: 30px; }
-  .console-body { padding: 18px 20px 8px; }
-  .console-foot { padding: 14px 20px 20px; }
+  .console-head { padding: 18px 18px 12px; }
+  .console-title { font-size: 28px; }
+  .console-body { padding: 16px 18px 6px; }
+  /* compact, tidy footer so it doesn't eat the bottom-sheet */
+  .console-foot {
+    flex-direction: column; align-items: stretch; gap: 9px;
+    padding: 11px 18px calc(14px + env(safe-area-inset-bottom));
+  }
+  .console-foot .seed-block { width: 100%; gap: 8px; }
+  .console-foot .seed-field { margin-right: auto; }
+  .console-foot .seed-input { width: 64px; }
+  .console-foot .ghost-btn { padding: 10px 12px; font-size: 10px; letter-spacing: 0.1em; }
+  .console-foot-right { width: 100%; }
+  .console-foot-right .ghost-btn { flex: 1 1 auto; justify-content: center; }
 }
 

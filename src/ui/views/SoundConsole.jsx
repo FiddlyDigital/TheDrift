@@ -67,13 +67,13 @@ export function SoundConsole() {
                 onChange={(e) => update("seed", Math.max(1, +e.target.value || 1))} />
             </div>
             <button className="ghost-btn" onClick={reshuffle}><DiceIcon /> Reshuffle</button>
-            <button className="ghost-btn save-btn" onClick={saveCurrent}><SaveIcon /> Save this drift</button>
+            <button className="ghost-btn save-btn" onClick={saveCurrent}><SaveIcon /> Save</button>
           </div>
           <div className="console-foot-right">
             {installPrompt && (
-              <button className="ghost-btn" onClick={install}><InstallIcon /> Install app</button>
+              <button className="ghost-btn" onClick={install}><InstallIcon /> Install</button>
             )}
-            <button className="ghost-btn" onClick={share}><LinkIcon /> Copy share link</button>
+            <button className="ghost-btn" onClick={share}><LinkIcon /> Share link</button>
           </div>
         </footer>
       </aside>
