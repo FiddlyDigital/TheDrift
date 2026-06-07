@@ -4,7 +4,7 @@ import { render, screen, fireEvent, cleanup } from '@testing-library/preact';
 import { tapToField } from '../playAlong.js';
 import { poolNote } from '../../engine/index.js';
 import { useDriftStore } from '../store/useDriftStore.js';
-import { VizCorner } from '../views/immersive/VizCorner.jsx';
+import { Dock } from '../views/immersive/Dock.jsx';
 
 describe('tapToField (X/Y -> musical params)', () => {
   it('maps the top of the canvas to the highest pitch, bottom to lowest', () => {
@@ -40,7 +40,7 @@ describe('poolNote (pitch01 -> in-scale midi)', () => {
   });
 });
 
-describe('play-along toggle + VizCorner chip', () => {
+describe('play-along toggle + dock control', () => {
   const initial = useDriftStore.getState();
   beforeEach(() => {
     cleanup();
@@ -59,9 +59,9 @@ describe('play-along toggle + VizCorner chip', () => {
     expect(localStorage.getItem('loops.playalong')).toBe('0');
   });
 
-  it('renders the chip in mandala mode and toggles on click', () => {
+  it('renders the control in mandala mode and toggles on click', () => {
     useDriftStore.setState({ vizMode: 'mandala', vizUiVisible: true });
-    render(<VizCorner />);
+    render(<Dock />);
     const btn = screen.getByRole('button', { name: /play along/i });
     expect(useDriftStore.getState().playAlong).toBe(false);
     fireEvent.click(btn);

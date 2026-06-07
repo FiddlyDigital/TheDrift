@@ -47,12 +47,14 @@ describe('App smoke (baseline behaviour to preserve)', () => {
   });
 
   it('renders the curated scenes in the default Scenes panel', () => {
+    useDriftStore.setState({ showWelcome: false, consoleOpen: true });
     render(<App />);
     expect(screen.getByRole('button', { name: 'Deep Rest' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Murmuration' })).toBeInTheDocument();
   });
 
   it('switches control sections via the tab bar', () => {
+    useDriftStore.setState({ showWelcome: false, consoleOpen: true });
     render(<App />);
     fireEvent.click(screen.getByRole('tab', { name: 'Voice' }));
     expect(screen.getByText('Ensemble')).toBeInTheDocument();
@@ -60,6 +62,7 @@ describe('App smoke (baseline behaviour to preserve)', () => {
   });
 
   it('applying a scene calls the engine and marks it active', () => {
+    useDriftStore.setState({ showWelcome: false, consoleOpen: true });
     render(<App />);
     const btn = screen.getByRole('button', { name: 'Clear Mind' });
     fireEvent.click(btn);
@@ -68,6 +71,7 @@ describe('App smoke (baseline behaviour to preserve)', () => {
   });
 
   it('moving a dial pushes the change to the engine', () => {
+    useDriftStore.setState({ showWelcome: false, consoleOpen: true });
     render(<App />);
     fireEvent.click(screen.getByRole('tab', { name: 'Space' }));
     const sliders = screen.getAllByRole('slider');
@@ -101,8 +105,9 @@ describe('App smoke (baseline behaviour to preserve)', () => {
   });
 
   it('unlocks Atelier after three taps on the title', () => {
+    useDriftStore.setState({ showWelcome: false, consoleOpen: true });
     const { container } = render(<App />);
-    const title = container.querySelector('h1.title');
+    const title = container.querySelector('h1.console-title');
     fireEvent.click(title); fireEvent.click(title); fireEvent.click(title);
     expect(screen.getByRole('tab', { name: 'Atelier' })).toBeInTheDocument();
   });

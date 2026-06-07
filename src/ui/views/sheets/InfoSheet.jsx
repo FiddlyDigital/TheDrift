@@ -12,7 +12,7 @@ export function InfoSheet() {
   const isFullscreen = useDriftStore((s) => s.isFullscreen);
   const installPrompt = useDriftStore((s) => s.installPrompt);
   const setSheet = useDriftStore((s) => s.setSheet);
-  const setImmersive = useDriftStore((s) => s.setImmersive);
+  const setConsoleOpen = useDriftStore((s) => s.setConsoleOpen);
   const share = useDriftStore((s) => s.share);
   const install = useDriftStore((s) => s.install);
   const toggleFullscreen = useDriftStore((s) => s.toggleFullscreen);
@@ -28,7 +28,7 @@ export function InfoSheet() {
       <p className="info-now">Now playing &middot; {ensembleName(params)} &middot; {moodName(params)}{activeScene ? " · " + activeScene : ""}</p>
       <div className="info-actions">
         <button className="ghost-btn accent" onClick={() => setSheet("export")}><DownloadIcon /> Export this drift</button>
-        <button className="ghost-btn" onClick={() => { setSheet(null); setImmersive(false); }}><SlidersIcon /> Open Sound &amp; tuning</button>
+        <button className="ghost-btn" onClick={() => { setSheet(null); setConsoleOpen(true); }}><SlidersIcon /> Open Sound &amp; tuning</button>
         <button className="ghost-btn" onClick={share}>{copied ? "Link copied" : "Copy share link"}</button>
         <button className="ghost-btn" onClick={toggleFullscreen}>{isFullscreen ? "Exit fullscreen" : "Fullscreen"}</button>
         {installPrompt && <button className="ghost-btn" onClick={install}>Install app</button>}

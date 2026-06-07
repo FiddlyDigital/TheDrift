@@ -9,24 +9,25 @@ import { useWakeLock } from './hooks/useWakeLock.js';
 import { useInstallPrompt } from './hooks/useInstallPrompt.js';
 import { useImmersiveIdle } from './hooks/useImmersiveIdle.js';
 import { usePersistence } from './hooks/usePersistence.js';
-import { Header } from './views/Header.jsx';
 import { Field } from './views/Field.jsx';
-import { Legend } from './views/Legend.jsx';
-import { Footer } from './views/Footer.jsx';
 import { WelcomeScreen } from './views/WelcomeScreen.jsx';
-import { ControlsPanel } from './views/controls/ControlsPanel.jsx';
+import { SoundConsole } from './views/SoundConsole.jsx';
+import { ToastHost } from './views/ToastHost.jsx';
+import { Coachmark } from './views/immersive/Coachmark.jsx';
 import { ImmersiveLayer } from './views/immersive/ImmersiveLayer.jsx';
 import { Sheets } from './views/sheets/Sheets.jsx';
 
 // ---- main ------------------------------------------------------------
 // App is a thin shell: it owns the DOM refs for the canvases / breath overlay,
-// wires up the effect hooks, and composes the view. All state + behaviour lives
-// in the Zustand store slices and the hooks; each view selects what it needs.
+// wires up the effect hooks, and composes the view. The design is immersive-
+// first — the mandala Field is the permanent base layer and the immersive HUD
+// is always present; the Sound & tuning console slides in over it as a drawer.
+// All state + behaviour lives in the Zustand store slices and the hooks.
 export default function App() {
-  const immersive = useDriftStore((s) => s.immersive);
   const vizUiVisible = useDriftStore((s) => s.vizUiVisible);
   const playAlong = useDriftStore((s) => s.playAlong);
   const vizMode = useDriftStore((s) => s.vizMode);
+  const consoleOpen = useDriftStore((s) => s.consoleOpen);
 
   // DOM refs owned by the view; the canvases + 3D breath overlay are driven by
   // the visualizer loop, so they're created here and passed where needed.
@@ -48,14 +49,16 @@ export default function App() {
   useImmersiveIdle();
 
   return (
-    <div className={"stage" + (immersive ? " immersive" : "") + (immersive && !vizUiVisible ? " hide-cursor" : "") + (playAlong && immersive && vizMode === "mandala" ? " play-along" : "")}>
-      <Header />
+    <div className={"stage immersive"
+      + (!vizUiVisible && !consoleOpen ? " hide-cursor" : "")
+      + (consoleOpen ? " console-open" : "")
+      + (playAlong && !consoleOpen && vizMode === "mandala" ? " play-along" : "")}>
       <Field canvasRef={canvasRef} glCanvasRef={glCanvasRef} />
-      <Legend />
-      <ControlsPanel />
-      <Footer />
       <ImmersiveLayer breathRingRef={breathRingRef} breathLabelRef={breathLabelRef} breathCountRef={breathCountRef} />
+      <SoundConsole />
+      <Coachmark />
       <Sheets />
+      <ToastHost />
       <WelcomeScreen />
     </div>
   );

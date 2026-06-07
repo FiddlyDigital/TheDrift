@@ -18,9 +18,9 @@ export function useImmersiveIdle() {
     return () => cancelAnimationFrame(id);
   }, [immersive]);
 
-  // auto-hide the immersive UI; Escape leaves immersive
+  // auto-hide the immersive chrome after inactivity (the console owns Escape)
   useEffect(() => {
-    const { setVizUiVisible, setImmersive } = useDriftStore.getState();
+    const { setVizUiVisible } = useDriftStore.getState();
     if (!immersive) { setVizUiVisible(true); return; }
     setVizUiVisible(true);
     const arm = () => {
@@ -28,14 +28,13 @@ export function useImmersiveIdle() {
       clearTimeout(hideTimerRef.current);
       hideTimerRef.current = setTimeout(() => setVizUiVisible(false), 3200);
     };
-    const onKey = (e) => { if (e.key === "Escape") setImmersive(false); else arm(); };
     window.addEventListener("pointermove", arm);
     window.addEventListener("pointerdown", arm);
-    window.addEventListener("keydown", onKey);
+    window.addEventListener("keydown", arm);
     return () => {
       window.removeEventListener("pointermove", arm);
       window.removeEventListener("pointerdown", arm);
-      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keydown", arm);
       clearTimeout(hideTimerRef.current);
     };
   }, [immersive]);

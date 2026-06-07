@@ -16,6 +16,9 @@ export function createUiSlice(set, get, init) {
 
   return {
     immersive: true,
+    consoleOpen: false,                 // the slide-over Sound & tuning drawer
+    coachDone: ls("loops.coach") === "1",
+    coachVisible: false,                // one-time dock hint after Begin
     vizMode: "mandala",                 // "mandala" | "space"
     vizUiVisible: true,
     sheet: null,
@@ -40,6 +43,11 @@ export function createUiSlice(set, get, init) {
     installPrompt: null,
 
     setImmersive: (v) => set({ immersive: upd(v, get().immersive) }),
+    setConsoleOpen: (v) => set({ consoleOpen: upd(v, get().consoleOpen) }),
+    dismissCoach: () => {
+      try { localStorage.setItem("loops.coach", "1"); } catch (e) {}
+      set({ coachVisible: false, coachDone: true });
+    },
     setVizMode: (v) => set({ vizMode: upd(v, get().vizMode) }),
     setVizUiVisible: (v) => set({ vizUiVisible: upd(v, get().vizUiVisible) }),
     setSheet: (v) => set({ sheet: upd(v, get().sheet) }),
@@ -136,6 +144,10 @@ export function createUiSlice(set, get, init) {
       get()._play();
       set({ immersive: true, welcomeHiding: true });
       setTimeout(() => set({ showWelcome: false }), 950);
+      if (!get().coachDone) {
+        setTimeout(() => set({ coachVisible: true }), 1300);
+        setTimeout(() => { if (get().coachVisible) get().dismissCoach(); }, 11000);
+      }
     },
 
     enterViz: () => {
