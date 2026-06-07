@@ -855,7 +855,8 @@ body {
 /* ---- play-view dock (the home of the mandala-first UI) ---- */
 .dock {
   position: fixed; left: 50%; bottom: 60px; transform: translate(-50%, 14px);
-  z-index: 75; display: flex; align-items: center; gap: 6px;
+  /* above the centre mandala-core (76) so popovers take taps, not play/pause */
+  z-index: 80; display: flex; align-items: center; gap: 6px;
   padding: 9px 12px; border-radius: 100px;
   background: rgba(20, 17, 13, 0.62);
   backdrop-filter: blur(16px) saturate(1.1); -webkit-backdrop-filter: blur(16px) saturate(1.1);
@@ -1053,6 +1054,17 @@ body {
   .dock-feel { display: none; }
   .dock-more { display: flex; }
   .dock-sep { display: none; }
+  /* keep both dock popovers fully on-screen: anchor to the button's near edge
+     with a viewport-bounded width (More hugs the right, Breath the left) */
+  .dock-more-pop {
+    left: auto; right: 0; transform: none; width: min(82vw, 250px);
+  }
+  .dock-more-pop::after { left: auto; right: 18px; transform: none; }
+  .breath-pop {
+    left: 0; right: auto; transform: none; width: min(82vw, 240px);
+    animation: dockPopFade .22s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .breath-pop::after { left: 24px; right: auto; transform: none; }
   .sheet { padding: 28px 22px 24px; }
   .info-title { font-size: 42px; }
 }
