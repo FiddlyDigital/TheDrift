@@ -156,7 +156,10 @@ a floating **dock** instead: play/pause (the mandala's own centre), the breath
 guide, the live "feel" toggles (play-along, spatial audio, entrain-light), and
 the Session / Journey / About sheets. On phones the feel toggles and About fold
 into a **More** menu so the dock stays narrow. A top-corner control toggles the
-2D mandala / 3D space view and fullscreen.
+2D mandala / 3D space view and fullscreen. The About sheet carries a **Midnight
+palette** toggle that swaps the warm-paper surfaces (sheets, console, welcome,
+chips) for a sleep-friendly dark theme; the immersive mandala itself is dark in
+either mode.
 
 ---
 
@@ -194,7 +197,9 @@ on randomized legs (≈2.5–5 minutes each), never stopping.
 - **Breath guide.** An animated ring paced to one of three patterns — Coherent
   (5.5/min), Box (4-4-4-4), or 4-7-8 — with a phase label and countdown. Renders
   in both the 2D and 3D views. Started, paced, and given its audible swell from
-  the dock's **Breathe** popover.
+  the dock's **Breathe** popover, which can also drive **haptic pacing** on
+  supported touch devices — a gentle buzz on each inhale/exhale so you can keep
+  your eyes closed, with an adjustable strength.
 
 ### Ambience textures (9)
 
@@ -378,9 +383,10 @@ stereo placement is used.
 - No analytics or telemetry.
 - All state lives in the browser: the URL hash (for sharing) and local storage
   (config, library, and preferences such as volume, breath pattern / pace /
-  audible swell, beat-delivery mode, unlocked Atelier, the spatial-audio,
-  play-along, and entrain-light toggles, and whether the one-time onboarding
-  hint has been seen).
+  audible swell / haptic pacing, beat-delivery mode, colour palette
+  (paper / midnight), unlocked Atelier, the spatial-audio, play-along, and
+  entrain-light toggles, and whether the one-time onboarding hint has been
+  seen).
 
 ---
 

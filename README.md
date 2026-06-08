@@ -32,7 +32,7 @@ Output goes to `dist/`. The bundle is:
 
 - **Minified** via Terser (2-pass, console stripped)
 - **No web fonts** — UI uses a system serif/mono stack, so there's no render-blocking font fetch
-- ~177 KB JS / ~54 KB gzip
+- ~184 KB JS / ~57 KB gzip
 
 Deploy the contents of `dist/` to any static host. Pushing to `main` runs the
 CI/CD pipeline (tests → build → deploy to GitHub Pages).
@@ -45,11 +45,11 @@ CI/CD pipeline (tests → build → deploy to GitHub Pages).
 The Drift is **immersive-first**: you land straight in the full-screen mandala and stay there. A floating **dock** at the bottom is the remote for the whole experience (play/pause is the mandala's own centre):
 
 - **Sound** opens the *Sound & tuning* console — a panel that slides in over the mandala (a bottom sheet on mobile) holding the tabbed control groups (Scenes, Voice, Motion, Space, Atmosphere, Mixer, and Atelier when unlocked) plus seed / save / share.
-- **Breathe** is a popover to start the breath guide and choose its pattern, pace, and audible swell.
+- **Breathe** is a popover to start the breath guide and choose its pattern, pace, audible swell, and (on supported phones) haptic pacing.
 - **Feel toggles** — play-along, spatial audio, and entrain-light. On phones these (and About) collapse into a **⋯ More** menu so the dock stays uncluttered.
 - **Session / Journey / About** open as calm paper sheets over the field.
 
-The top corner toggles **2D mandala ↔ 3D space** and fullscreen. The chrome auto-hides after a few seconds of stillness and returns on the first move; transient confirmations stack in a single toast queue above the dock; a one-time coachmark orients first-time listeners.
+The top corner toggles **2D mandala ↔ 3D space** and fullscreen. The chrome auto-hides after a few seconds of stillness and returns on the first move; transient confirmations stack in a single toast queue above the dock; a one-time coachmark orients first-time listeners. A **Midnight palette** toggle in the About sheet swaps the warm-paper surfaces for a sleep-friendly dark theme (the immersive mandala is dark either way).
 
 ### Sound engine
 - **Synthesized instruments (22)** — all audio generated in the browser via the Web Audio API, no samples:
@@ -101,7 +101,7 @@ Timed arcs that travel between scenes with smooth crossfades: Into Sleep · Deep
 - **Session timer** — timed sit with opening/closing singing-bowl bells and configurable interval bells
 - **Sleep timer** — auto-fade to silence after a set duration
 - **Wake / sunrise timer** — starts silent and rises slowly from inaudible to full
-- **Breath guide** — animated ring paced to Coherent (5.5/min), Box (4-4-4-4), or 4-7-8 patterns (in both 2D and 3D views)
+- **Breath guide** — animated ring paced to Coherent (5.5/min), Box (4-4-4-4), or 4-7-8 patterns (in both 2D and 3D views), with an optional audible breath swell and **haptic pacing** — a gentle buzz at each phase change, on supported touch devices
 - **Tuning** — A4 reference: 415 Hz · 432 Hz · 440 Hz · 444 Hz (C=528) · 448 Hz
 
 ### Visualization
@@ -159,7 +159,7 @@ src/
       midiSlice.js      # MIDI map + learn
       exportSlice.js    # WAV export
       uiSlice.js        # console drawer/sheets/welcome/coachmark/toggles
-                        #   (breath, spatial, play-along, entrain)
+                        #   (breath + haptics, spatial, play-along, entrain, theme)
     hooks/              # effect hooks (visualizer loop, timers, MIDI, media session,
                         #   wake lock, install prompt, immersive idle, persistence,
                         #   usePlayAlong — tap-to-drop)
