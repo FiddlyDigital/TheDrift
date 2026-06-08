@@ -1,2 +1,6 @@
 node_modules/
 dist/
+e2e/.shots/
+e2e/.output/
+test-results/
+playwright-report/
