@@ -31,6 +31,9 @@ export function assignOrbits(voices) {
       radius: 0.55 + norm * 1.35,                 // longer loop -> wider orbit
       tilt: (seedRand(i) - 0.5) * 1.4,            // -0.7..0.7 rad lean
       azimuth: seedRand(i + 100) * TWO_PI,        // which way it leans
+      phase: seedRand(i + 200) * TWO_PI,          // starting angle on the ring,
+                                                  // so strikes (loop wrap) don't
+                                                  // all fire at the same point
     };
   }
   return voices;
@@ -40,9 +43,12 @@ export function assignOrbits(voices) {
 export function orbitPosition(orbit, theta, out) {
   out = out || [0, 0, 0];
   const radius = orbit.radius;
+  // fold in the per-orbit starting angle so each voice rides — and fires — at
+  // its own point on the ring rather than all from theta = 0
+  const t = theta + (orbit.phase || 0);
   // point on a flat ring in XZ
-  const x = Math.cos(theta) * radius;
-  const z = Math.sin(theta) * radius;
+  const x = Math.cos(t) * radius;
+  const z = Math.sin(t) * radius;
   // tilt around X axis
   const ct = Math.cos(orbit.tilt), st = Math.sin(orbit.tilt);
   const y1 = -z * st;

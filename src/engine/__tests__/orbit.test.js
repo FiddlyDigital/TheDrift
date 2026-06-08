@@ -19,6 +19,17 @@ describe('assignOrbits', () => {
     expect(vs[1].orbit.radius).toBeGreaterThan(vs[0].orbit.radius);
     expect(vs[1].orbit.radius).toBeLessThan(vs[2].orbit.radius);
   });
+  it('gives each voice a distinct starting phase so strikes do not all fire at theta=0', () => {
+    const vs = assignOrbits([
+      { period: 8, row: 0 }, { period: 20, row: 1 }, { period: 48, row: 2 },
+    ]);
+    const phases = vs.map((v) => v.orbit.phase);
+    phases.forEach((p) => {
+      expect(p).toBeGreaterThanOrEqual(0);
+      expect(p).toBeLessThan(Math.PI * 2);
+    });
+    expect(new Set(phases).size).toBe(3);           // all different
+  });
 });
 
 describe('orbitPosition', () => {
@@ -30,6 +41,10 @@ describe('orbitPosition', () => {
     expect(p0[2]).toBeCloseTo(0, 5);
     const pHalf = orbitPosition(orbit, Math.PI);
     expect(pHalf[0]).toBeCloseTo(-1.2, 5); // theta=pi -> -x
+  });
+  it('offsets the angle by the orbit phase', () => {
+    const p = orbitPosition({ radius: 1, tilt: 0, azimuth: 0, phase: Math.PI }, 0);
+    expect(p[0]).toBeCloseTo(-1, 5);       // phase=pi shifts theta=0 to -x
   });
   it('keeps every point on the sphere of the orbit radius regardless of tilt/azimuth', () => {
     const orbit = { radius: 0.9, tilt: 0.6, azimuth: 2.1 };
