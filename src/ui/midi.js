@@ -17,7 +17,7 @@ export function isMidiSupported() {
   return typeof navigator !== "undefined" && typeof navigator.requestMIDIAccess === "function";
 }
 
-export function createMidiManager(onMessage) {
+export function createMidiManager(onMessage, onInputs) {
   let access = null;
   let inputs = [];
 
@@ -31,6 +31,9 @@ export function createMidiManager(onMessage) {
       list.push({ id: inp.id, name: inp.name || "MIDI input" });
     });
     inputs = list;
+    // push the refreshed device list to the store so connects/disconnects that
+    // arrive via onstatechange (after enable) are reflected in the UI
+    if (onInputs) onInputs(inputs.slice());
   }
 
   return {

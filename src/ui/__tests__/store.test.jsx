@@ -111,6 +111,15 @@ describe('ui slice — haptics + entrain consent', () => {
   });
 });
 
+describe('midi routing', () => {
+  it('a mapped range CC updates its param — including the newly-added Beat level', () => {
+    useDriftStore.setState({ midiMap: { binlevel: { type: 'cc', number: 21 } } });
+    st().onMidi([0xB0, 21, 64]);            // CC #21 -> ~0.5
+    expect(ENGINE.set).toHaveBeenCalledWith('binlevel', 64 / 127);
+    expect(st().params.binlevel).toBeCloseTo(64 / 127, 4);
+  });
+});
+
 describe('theme', () => {
   it('toggleTheme flips paper<->midnight, persists, and reflects onto <html>', () => {
     expect(st().theme).toBe('paper');

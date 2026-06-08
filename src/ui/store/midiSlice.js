@@ -6,27 +6,33 @@ const upd = (v, prev) => (typeof v === 'function' ? v(prev) : v);
 // ---- MIDI-mappable controls (Atelier) ----
 // "range" controls bind to a CC (knob/fader); "action" controls bind to a CC
 // (triggered at value >= 64) or a Note (triggered on note-on).
+// Grouped/ordered to mirror the control tabs (Transport · Scenes · Motion ·
+// Space · Mixer) so a knob is easy to find. Every continuous dial in those
+// tabs has a row here; the discrete chip groups (Mood, Ensemble, Tuning,
+// Ambience, Brainwaves) aren't CC-mappable.
 export const MIDI_CONTROLS = [
-  { id: "play", label: "Play / Pause", kind: "action" },
-  { id: "start", label: "Start", kind: "action" },
-  { id: "stop", label: "Stop", kind: "action" },
-  { id: "volume", label: "Master volume", kind: "range" },
-  { id: "looplevel", label: "Loops level", kind: "range" },
-  { id: "texlevel", label: "Ambience level", kind: "range" },
-  { id: "density", label: "Density", kind: "range" },
-  { id: "tempo", label: "Tempo", kind: "range" },
-  { id: "drift", label: "Drift", kind: "range" },
-  { id: "register", label: "Register", kind: "range" },
-  { id: "space", label: "Space", kind: "range" },
-  { id: "color", label: "Color", kind: "range" },
-  { id: "bloom", label: "Bloom", kind: "range" },
-  { id: "stutter", label: "Stutter", kind: "range" },
-  { id: "evolve", label: "Evolve", kind: "range" },
-  { id: "journey", label: "Journey", kind: "range" },
-  { id: "glue", label: "Glue", kind: "range" },
-  { id: "reshuffle", label: "Reshuffle", kind: "action" },
-  { id: "nextScene", label: "Next scene", kind: "action" },
-  { id: "prevScene", label: "Prev scene", kind: "action" },
+  { id: "play", label: "Play / Pause", kind: "action", group: "Transport" },
+  { id: "start", label: "Start", kind: "action", group: "Transport" },
+  { id: "stop", label: "Stop", kind: "action", group: "Transport" },
+  { id: "nextScene", label: "Next scene", kind: "action", group: "Scenes" },
+  { id: "prevScene", label: "Prev scene", kind: "action", group: "Scenes" },
+  { id: "reshuffle", label: "Reshuffle", kind: "action", group: "Scenes" },
+  { id: "density", label: "Density", kind: "range", group: "Motion" },
+  { id: "tempo", label: "Tempo", kind: "range", group: "Motion" },
+  { id: "drift", label: "Drift", kind: "range", group: "Motion" },
+  { id: "register", label: "Register", kind: "range", group: "Motion" },
+  { id: "evolve", label: "Evolve", kind: "range", group: "Motion" },
+  { id: "journey", label: "Journey", kind: "range", group: "Motion" },
+  { id: "space", label: "Space", kind: "range", group: "Space" },
+  { id: "color", label: "Color", kind: "range", group: "Space" },
+  { id: "bloom", label: "Bloom", kind: "range", group: "Space" },
+  { id: "stutter", label: "Stutter", kind: "range", group: "Space" },
+  { id: "volume", label: "Master volume", kind: "range", group: "Mixer" },
+  { id: "looplevel", label: "Loops level", kind: "range", group: "Mixer" },
+  { id: "texlevel", label: "Ambience level", kind: "range", group: "Mixer" },
+  { id: "binlevel", label: "Beat level", kind: "range", group: "Mixer" },
+  { id: "glue", label: "Glue", kind: "range", group: "Mixer" },
+  { id: "sidechain", label: "Sidechain", kind: "range", group: "Mixer" },
 ];
 export const MIDI_CONTROL_BY_ID = {};
 MIDI_CONTROLS.forEach((c) => { MIDI_CONTROL_BY_ID[c.id] = c; });
@@ -56,7 +62,7 @@ export function createMidiSlice(set, get) {
 
     enableMidi: async () => {
       if (!isMidiSupported()) return;
-      if (!manager) manager = createMidiManager((data) => get().onMidi(data));
+      if (!manager) manager = createMidiManager((data) => get().onMidi(data), (ins) => set({ midiInputs: ins }));
       try {
         const ins = await manager.enable();
         set({ midiInputs: ins, midiEnabled: true });

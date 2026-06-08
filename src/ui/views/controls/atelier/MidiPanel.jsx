@@ -31,12 +31,16 @@ export function MidiPanel() {
       {midiEnabled && (
         <>
           <div className="midi-map">
-            {MIDI_CONTROLS.map((c) => {
+            {MIDI_CONTROLS.map((c, i) => {
               const learning = midiLearn === c.id;
+              const newGroup = i === 0 || MIDI_CONTROLS[i - 1].group !== c.group;
               return (
-                <MidiRow key={c.id} control={c} binding={midiMap[c.id]} learning={learning}
-                  onLearn={() => setMidiLearn(learning ? null : c.id)}
-                  onClear={() => clearMidiBinding(c.id)} />
+                <React.Fragment key={c.id}>
+                  {newGroup && <div className="midi-group">{c.group}</div>}
+                  <MidiRow control={c} binding={midiMap[c.id]} learning={learning}
+                    onLearn={() => setMidiLearn(learning ? null : c.id)}
+                    onClear={() => clearMidiBinding(c.id)} />
+                </React.Fragment>
               );
             })}
           </div>
