@@ -119,6 +119,7 @@ An optional HRTF mode (headphones, off by default) that places each voice's soun
 Unlocked by triple-tapping the title in the Sound panel. Turns the generator into a hand-authored instrument:
 - **Custom harmony** — pick a key (12 roots) and a mode (24 scales, from the diatonic modes through exotic, world, and symmetric scales), and toggle individual scale degrees.
 - **Voice loom** — a per-loop editor: set each loop's instrument, note (or "roam"), and length; capture the live field into editable rows; lock voices so they hold while the rest keep drifting.
+- **Lab scopes** — an optional (off by default) pair of clinical visualizers tapped off the master output: a scrolling **spectrogram** (frequency × time, so phase-drift, Evolve re-voicing, and Bloom sidebands are all legible) and a stereo **vectorscope** (L × R Lissajous, revealing pan-drift and the 3D-spatial HRTF field). Mood-tinted, dark instrument panels.
 - **Web MIDI** — map a controller's knobs/faders to the dials and mixer levels, and buttons/keys to transport (Play/Pause, Start, Stop) and scenes (next/prev, reshuffle), via a MIDI-learn flow. Chromium-based browsers only.
 
 ### Other
@@ -151,6 +152,7 @@ src/
     icons.jsx           # SVG icon components
     canvas.js           # 2D renderer factory (mandala + panel + ripples)
     webgl.js            # WebGL renderer (3D "Drift Space" orrery)
+    scopes.js           # Atelier lab scopes (spectrogram + vectorscope) renderer factories
     midi.js             # Web MIDI manager + message parser
     store/              # Zustand store, split into slices
       useDriftStore.js  # composes the slices into one store
@@ -160,9 +162,9 @@ src/
       exportSlice.js    # WAV export
       uiSlice.js        # console drawer/sheets/welcome/coachmark/toggles
                         #   (breath + haptics, spatial, play-along, entrain, theme)
-    hooks/              # effect hooks (visualizer loop, timers, MIDI, media session,
-                        #   wake lock, install prompt, immersive idle, persistence,
-                        #   usePlayAlong — tap-to-drop)
+    hooks/              # effect hooks (visualizer loop, scopes loop, timers, MIDI,
+                        #   media session, wake lock, install prompt, immersive idle,
+                        #   persistence, usePlayAlong — tap-to-drop)
     views/              # presentational components
       Field.jsx, WelcomeScreen.jsx
       SoundConsole.jsx  # the slide-over "Sound & tuning" drawer (tabs + seed/share)

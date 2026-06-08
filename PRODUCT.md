@@ -245,6 +245,27 @@ instrument while preserving the drift model.
 
 Atelier creations are encoded in the share URL like any other state.
 
+### Lab scopes — spectrogram & vectorscope
+
+An optional pair of clinical audio visualizers (hidden behind a **Show/Hide**
+toggle, off by default) tapped off the master output via the Web Audio
+`AnalyserNode`, turning the Atelier into a small sound-design lab:
+
+- **Voice spectrogram** — a scrolling waterfall of frequency (vertical) × time
+  (horizontal), energy as brightness. Each single-note loop reads as a
+  horizontal band; as the loops phase-drift the bands pulse and overlap, the
+  **Evolve** dial shows a band gliding cleanly to a neighbouring tone, and
+  **Bloom** (FM shimmer) shows sidebands stacking vertically above the
+  fundamentals.
+- **Stereo vectorscope** — an X-Y Lissajous of left vs right, rotated 45° (mono
+  draws a vertical line, anti-phase a horizontal one), with phosphor-fade
+  trails. It leans with the autonomous **pan-drift**, opens into a wide whorl
+  under the **3D spatial** HRTF mode, and rotates with active binaural beats.
+
+Both are dark instrument panels tinted to the current mood, drawn only while the
+Atelier tab is open and silent until playback begins. They are pure read-only
+taps — the audio path and the offline WAV render are untouched.
+
 ### MIDI control (Web MIDI)
 
 External MIDI controllers can drive the instrument, so it can be played with

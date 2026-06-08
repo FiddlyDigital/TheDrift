@@ -1,6 +1,7 @@
 import React from 'react';
 import { ScaleEditor } from './atelier/ScaleEditor.jsx';
 import { VoiceLoom } from './atelier/VoiceLoom.jsx';
+import { Scopes } from './atelier/Scopes.jsx';
 import { MidiPanel } from './atelier/MidiPanel.jsx';
 
 // Hidden expert section. A thin shell composing the three sub-panels; each reads
@@ -15,6 +16,7 @@ export function AtelierSection() {
       </p>
       <ScaleEditor />
       <VoiceLoom />
+      <Scopes />
       <MidiPanel />
     </div>
   );

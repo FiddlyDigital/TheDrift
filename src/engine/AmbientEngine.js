@@ -75,6 +75,7 @@ function AmbientEngine() {
   this.ctx = null;
   this.playing = false;
   this.voices = [];
+  this._scope = null;       // lazy analyser taps for the Atelier scopes
   this.userVolume = 0.85;   // 0..1 master listening level
   this.spatial = false;     // 3D HRTF placement matching the orrery (headphones)
   this.params = {
@@ -507,6 +508,35 @@ AmbientEngine.prototype.sampleLevels = function () {
   // ride the loudness leveler on the same cadence as the visuals
   this._updateAutoLevel();
   return { level: this._level, low: this._levLow, high: this._levHigh };
+};
+
+// Dedicated analyser taps for the Atelier scopes (spectrogram + stereo
+// vectorscope). Built lazily on first use and cached — deliberately NOT in
+// ensureContext, because that is reused for the offline WAV render and these
+// taps must never exist there. Idempotent and null-safe. The taps are sinks
+// off `this.fade`, so fade -> limiter -> destination is untouched.
+// Returns { spec, left, right } or null when there is no live context yet.
+AmbientEngine.prototype.getScopeAnalysers = function () {
+  if (!this.ctx) return null;            // autoplay: no ctx until first play
+  if (this._scope) return this._scope;   // idempotent
+  const ctx = this.ctx;
+  // crisp spectrogram analyser — bigger FFT + low smoothing, unlike the
+  // mandala's heavily-smoothed `this.analyser`
+  const spec = ctx.createAnalyser();
+  spec.fftSize = 2048;
+  spec.smoothingTimeConstant = 0.3;
+  this.fade.connect(spec);
+  // L/R time-domain analysers for the vectorscope, via a channel splitter
+  const splitter = ctx.createChannelSplitter(2);
+  const left = ctx.createAnalyser();
+  const right = ctx.createAnalyser();
+  left.fftSize = 1024; left.smoothingTimeConstant = 0;
+  right.fftSize = 1024; right.smoothingTimeConstant = 0;
+  this.fade.connect(splitter);
+  splitter.connect(left, 0);
+  splitter.connect(right, 1);
+  this._scope = { spec, left, right, _splitter: splitter };
+  return this._scope;
 };
 
 // loudness consistency: measure the (pre-trim) program's spectral energy —
