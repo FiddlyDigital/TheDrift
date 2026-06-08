@@ -32,6 +32,18 @@ describe('Scopes component', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Hide' }));
     expect(container.querySelectorAll('canvas.scope-canvas').length).toBe(0);
   });
+
+  // regression: the setup effect must re-run when the canvases appear. Ref
+  // identity is stable, so keying the effect only on the refs left it never
+  // running on Show (black boxes). It must key off the open/enabled flag.
+  it('starts the scope loop when shown (not just on first mount)', () => {
+    const spy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext');
+    render(<Scopes />);
+    spy.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+    expect(spy).toHaveBeenCalled();   // effect re-ran and reached canvas setup
+    spy.mockRestore();
+  });
 });
 
 describe('engine getScopeAnalysers', () => {

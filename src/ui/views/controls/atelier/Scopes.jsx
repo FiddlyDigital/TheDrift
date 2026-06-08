@@ -8,7 +8,9 @@ export function Scopes() {
   const specRef = useRef(null);
   const vecRef = useRef(null);
   const [open, setOpen] = useState(false);
-  useScopes({ specCanvasRef: specRef, vectorCanvasRef: vecRef });
+  // `enabled` re-runs the effect when the canvases mount/unmount — ref identity
+  // is stable, so the effect can't key off the refs alone.
+  useScopes({ specCanvasRef: specRef, vectorCanvasRef: vecRef, enabled: open });
 
   return (
     <div className="atelier-group scopes-group">

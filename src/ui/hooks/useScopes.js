@@ -9,8 +9,9 @@ import { useDriftStore } from '../store/useDriftStore.js';
 // listen for window resize, then a single rAF loop that reads the store
 // non-reactively and only draws while the Atelier tab is showing. The renderers
 // themselves handle the idle case (no live context / paused).
-export function useScopes({ specCanvasRef, vectorCanvasRef }) {
+export function useScopes({ specCanvasRef, vectorCanvasRef, enabled = true }) {
   useEffect(() => {
+    if (!enabled) return;   // canvases only exist (and refs are populated) when shown
     const specCanvas = specCanvasRef.current;
     const vecCanvas = vectorCanvasRef.current;
     if (!specCanvas || !vecCanvas) return;
@@ -62,5 +63,5 @@ export function useScopes({ specCanvasRef, vectorCanvasRef }) {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", onResize);
     };
-  }, [specCanvasRef, vectorCanvasRef]);
+  }, [enabled, specCanvasRef, vectorCanvasRef]);
 }
