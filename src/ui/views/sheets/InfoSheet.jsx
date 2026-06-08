@@ -1,6 +1,6 @@
 import React from 'react';
 import { useDriftStore } from '../../store/useDriftStore.js';
-import { DownloadIcon, SlidersIcon } from '../../icons.jsx';
+import { DownloadIcon, SlidersIcon, MoonIcon, SunriseIcon } from '../../icons.jsx';
 import { moodName, ensembleName } from '../../format.js';
 
 // "About" sheet with quick actions (export, open sound view, share, fullscreen,
@@ -16,6 +16,8 @@ export function InfoSheet() {
   const share = useDriftStore((s) => s.share);
   const install = useDriftStore((s) => s.install);
   const toggleFullscreen = useDriftStore((s) => s.toggleFullscreen);
+  const theme = useDriftStore((s) => s.theme);
+  const toggleTheme = useDriftStore((s) => s.toggleTheme);
 
   return (
     <div className="sheet-body">
@@ -30,6 +32,9 @@ export function InfoSheet() {
         <button className="ghost-btn accent" onClick={() => setSheet("export")}><DownloadIcon /> Export this drift</button>
         <button className="ghost-btn" onClick={() => { setSheet(null); setConsoleOpen(true); }}><SlidersIcon /> Open Sound &amp; tuning</button>
         <button className="ghost-btn" onClick={() => setSheet("help")}>Keys &amp; shortcuts</button>
+        <button className="ghost-btn" onClick={toggleTheme}>
+          {theme === 'midnight' ? <><SunriseIcon /> Daylight palette</> : <><MoonIcon /> Midnight palette</>}
+        </button>
         <button className="ghost-btn" onClick={share}>{copied ? "Link copied" : "Copy share link"}</button>
         <button className="ghost-btn" onClick={toggleFullscreen}>{isFullscreen ? "Exit fullscreen" : "Fullscreen"}</button>
         {installPrompt && <button className="ghost-btn" onClick={install}>Install app</button>}

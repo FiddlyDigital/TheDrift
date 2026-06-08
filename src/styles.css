@@ -13,6 +13,26 @@
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
 }
 
+/* Midnight — a sleep-friendly dark variant. The immersive mandala and its
+   floating controls are already dark-on-black, so only the "paper" surfaces
+   (sheets, sound console, welcome, mood/scene chips, library) re-theme here,
+   purely by remapping the shared ink/paper variables. */
+[data-theme="midnight"] {
+  --paper:   #17150f;       /* deep warm charcoal */
+  --paper-2: #1f1c15;
+  --paper-3: #27231b;
+  --ink:     #e9dec9;       /* warm off-white */
+  --ink-2:   rgba(233, 222, 201, 0.62);
+  --ink-3:   rgba(233, 222, 201, 0.30);
+  --ink-line:rgba(233, 222, 201, 0.16);
+  --accent:  #cd7a4f;       /* sienna, lifted to read on dark */
+  --accent-2: rgba(205, 122, 79, 0.18);
+}
+/* the few spots that hardcode a light-theme value in a paper context */
+[data-theme="midnight"] .welcome-begin:hover,
+[data-theme="midnight"] .console-play:hover { background: var(--accent); }
+[data-theme="midnight"] .saved.active .saved-x { color: rgba(23, 21, 15, 0.5); }
+
 * { box-sizing: border-box; }
 /* kill the mobile blue tap-flash on every interactive element */
 button, a, [role="button"], input, select, textarea, label, .chip, canvas {

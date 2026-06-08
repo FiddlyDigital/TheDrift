@@ -110,3 +110,20 @@ describe('ui slice — haptics + entrain consent', () => {
     expect(st().entrainPrompt).toBe(false);
   });
 });
+
+describe('theme', () => {
+  it('toggleTheme flips paper<->midnight, persists, and reflects onto <html>', () => {
+    expect(st().theme).toBe('paper');
+    expect(document.documentElement.dataset.theme).toBeUndefined();
+
+    st().toggleTheme();
+    expect(st().theme).toBe('midnight');
+    expect(localStorage.getItem('loops.theme')).toBe('midnight');
+    expect(document.documentElement.dataset.theme).toBe('midnight');
+
+    st().toggleTheme();
+    expect(st().theme).toBe('paper');
+    expect(localStorage.getItem('loops.theme')).toBe('paper');
+    expect(document.documentElement.dataset.theme).toBeUndefined();
+  });
+});

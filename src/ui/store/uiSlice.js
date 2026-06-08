@@ -4,6 +4,14 @@ import { BREATH_RATE_DEFAULT, BREATH_RATE_MIN, BREATH_RATE_MAX } from '../consta
 const upd = (v, prev) => (typeof v === 'function' ? v(prev) : v);
 const clampRate = (v) => Math.min(BREATH_RATE_MAX, Math.max(BREATH_RATE_MIN, v || BREATH_RATE_DEFAULT));
 const ls = (k, d) => { try { return localStorage.getItem(k); } catch (e) { return d; } };
+// reflect the chosen palette onto <html data-theme> so the CSS variables swap;
+// "paper" is the default and carries no attribute.
+const applyTheme = (t) => {
+  try {
+    const el = document.documentElement;
+    if (t === 'midnight') el.dataset.theme = 'midnight'; else delete el.dataset.theme;
+  } catch (e) {}
+};
 
 // Presentation + local playback preferences: the immersive view, sheets, the
 // welcome screen, breath guide, hidden Atelier unlock, spatial-audio toggle and
@@ -14,7 +22,11 @@ export function createUiSlice(set, get, init) {
   })();
   let titleTap = { n: 0, t: 0 };
 
+  const initialTheme = ls("loops.theme") || "paper";
+  applyTheme(initialTheme);   // before first paint, so no light-theme flash
+
   return {
+    theme: initialTheme,                // "paper" | "midnight"
     immersive: true,
     consoleOpen: false,                 // the slide-over Sound & tuning drawer
     coachDone: ls("loops.coach") === "1",
@@ -51,6 +63,12 @@ export function createUiSlice(set, get, init) {
     dismissCoach: () => {
       try { localStorage.setItem("loops.coach", "1"); } catch (e) {}
       set({ coachVisible: false, coachDone: true });
+    },
+    toggleTheme: () => {
+      const next = get().theme === 'midnight' ? 'paper' : 'midnight';
+      try { localStorage.setItem("loops.theme", next); } catch (e) {}
+      applyTheme(next);
+      set({ theme: next });
     },
     setVizMode: (v) => set({ vizMode: upd(v, get().vizMode) }),
     setVizUiVisible: (v) => set({ vizUiVisible: upd(v, get().vizUiVisible) }),
