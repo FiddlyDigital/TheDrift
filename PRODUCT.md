@@ -368,9 +368,13 @@ stereo placement is used.
 - **Progressive Web App.** Installable on desktop and mobile; works offline via
   a service worker (network-first for app assets, cache fallback).
 - **Lock-screen / media controls.** Media Session integration provides
-  play/pause/stop and next/previous (cycle scene), with title, artist, album,
-  and mood-colored artwork. A silent anchor element keeps background playback
-  alive.
+  play/pause/stop and next/previous (cycle scene), turning the OS media widget
+  into a small heads-up display: the title/artist/album track the live field
+  (scene or mood, the running journey, and an ensemble · mood · tuning · brainwave
+  descriptor line) alongside mood-colored artwork, and a **progress scrubber**
+  shows real elapsed / remaining time whenever a timed experience is running
+  (journey, session, sleep, or wake timer). A silent anchor element keeps
+  background playback alive.
 - **Screen wake lock** while playing (where supported).
 - **Mobile orientation.** The installed app is locked to portrait.
 

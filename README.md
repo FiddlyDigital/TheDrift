@@ -125,7 +125,7 @@ Unlocked by triple-tapping the title in the Sound panel. Turns the generator int
 - **Export to WAV** — renders 1–5 minutes offline at 44.1 kHz stereo (deterministic)
 - **Personal library** — save and recall favourite configurations (local)
 - **Share link** — encodes the full state (all dials + seed, plus any Atelier scale/voice data) in the URL hash
-- **PWA** — installable, works offline, lock-screen media controls via Media Session API, screen wake lock while playing, portrait-locked on mobile
+- **PWA** — installable, works offline, rich lock-screen media controls via the Media Session API (live scene/mood/journey metadata, generated artwork, scene-skip handlers, and a progress scrubber for timed sessions/journeys), screen wake lock while playing, portrait-locked on mobile
 
 ---
 

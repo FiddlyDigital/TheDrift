@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { ENGINE } from '../../engine/index.js';
 import { MOOD_VIZ } from '../glyphs.jsx';
+import { BRAINWAVES } from '../constants.js';
 import { useDriftStore } from '../store/useDriftStore.js';
 
 // A looping silent WAV keeps the page an active media source so lock-screen /
@@ -62,6 +63,17 @@ export function useMediaSession() {
   const activeScene = useDriftStore((s) => s.activeScene);
   const mood = useDriftStore((s) => s.params.mood);
   const ensemble = useDriftStore((s) => s.params.ensemble);
+  const tuning = useDriftStore((s) => s.params.tuning);
+  const binaural = useDriftStore((s) => s.params.binaural);
+  const journey = useDriftStore((s) => s.journey);
+  // timed-experience clocks, for the lock-screen progress scrubber
+  const journeyEnd = useDriftStore((s) => s._journeyEnd);
+  const sessionEnd = useDriftStore((s) => s.sessionEnd);
+  const sessionTotal = useDriftStore((s) => s._sessionTotal);
+  const sleepEnd = useDriftStore((s) => s.sleepEnd);
+  const sleepDur = useDriftStore((s) => s.sleepDur);
+  const wakeAt = useDriftStore((s) => s.wakeAt);
+  const wakeIn = useDriftStore((s) => s.wakeIn);
   const anchorRef = useRef(null);
 
   useEffect(() => {
@@ -87,18 +99,49 @@ export function useMediaSession() {
     return () => ["play", "pause", "stop", "nexttrack", "previoustrack"].forEach((k) => set(k, null));
   }, []);
 
+  // The lock-screen / media-widget text, kept as a live read-out of the field:
+  // scene or mood up top, the journey (if one is running) as the "artist", and a
+  // descriptor line of ensemble · mood · tuning · brainwave band as the "album".
   useEffect(() => {
     if (!("mediaSession" in navigator) || typeof window.MediaMetadata !== "function") return;
     const AE = ENGINE.constructor;
     const moodName = AE.MOODS && AE.MOODS[mood] ? AE.MOODS[mood].name : "Drift";
     const ensName = AE.ENSEMBLES && AE.ENSEMBLES[ensemble] ? AE.ENSEMBLES[ensemble].name : "";
+    const binName = (BRAINWAVES.find((b) => b.id === binaural) || {}).name;
+    const parts = [ensName, moodName];
+    if (tuning && tuning !== 440) parts.push(tuning + " Hz");
+    if (binName && binaural !== "off") parts.push(binName);
     try {
       navigator.mediaSession.metadata = new window.MediaMetadata({
         title: activeScene || moodName,
-        artist: "The Drift — generative ambient",
-        album: ensName + (ensName && moodName ? " · " : "") + moodName,
+        artist: journey ? "Journey · " + (journey.name || "Drift") : "The Drift — generative ambient",
+        album: parts.filter(Boolean).join(" · "),
         artwork: makeArtwork(mood),
       });
     } catch (e) {}
-  }, [activeScene, mood, ensemble]);
+  }, [activeScene, mood, ensemble, tuning, binaural, journey]);
+
+  // Drive the OS media scrubber from whichever timed experience is running
+  // (journey > session > sleep > wake), so the lock screen shows real elapsed /
+  // remaining time. Cleared when none is active.
+  useEffect(() => {
+    if (!("mediaSession" in navigator)) return;
+    const ms = navigator.mediaSession;
+    if (typeof ms.setPositionState !== "function") return;
+    let totalSec = 0, endMs = 0;
+    if (journey && journeyEnd) { totalSec = (journey.total || 0) * 60; endMs = journeyEnd; }
+    else if (sessionEnd) { totalSec = sessionTotal; endMs = sessionEnd; }       // already seconds
+    else if (sleepEnd) { totalSec = sleepDur * 60; endMs = sleepEnd; }
+    else if (wakeAt) { totalSec = wakeIn * 60; endMs = wakeAt; }
+    const clear = () => { try { ms.setPositionState(); } catch (e) {} };
+    if (!(totalSec > 0) || !endMs) { clear(); return; }
+    const push = () => {
+      const remain = Math.max(0, (endMs - Date.now()) / 1000);
+      const position = Math.min(totalSec, Math.max(0, totalSec - remain));
+      try { ms.setPositionState({ duration: totalSec, position, playbackRate: 1 }); } catch (e) {}
+    };
+    push();
+    const id = setInterval(push, 1000);
+    return () => { clearInterval(id); clear(); };
+  }, [journey, journeyEnd, sessionEnd, sessionTotal, sleepEnd, sleepDur, wakeAt, wakeIn]);
 }
