@@ -29,6 +29,7 @@ export function InfoSheet() {
       <div className="info-actions">
         <button className="ghost-btn accent" onClick={() => setSheet("export")}><DownloadIcon /> Export this drift</button>
         <button className="ghost-btn" onClick={() => { setSheet(null); setConsoleOpen(true); }}><SlidersIcon /> Open Sound &amp; tuning</button>
+        <button className="ghost-btn" onClick={() => setSheet("help")}>Keys &amp; shortcuts</button>
         <button className="ghost-btn" onClick={share}>{copied ? "Link copied" : "Copy share link"}</button>
         <button className="ghost-btn" onClick={toggleFullscreen}>{isFullscreen ? "Exit fullscreen" : "Fullscreen"}</button>
         {installPrompt && <button className="ghost-btn" onClick={install}>Install app</button>}

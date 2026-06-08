@@ -104,6 +104,22 @@ describe('App smoke (baseline behaviour to preserve)', () => {
     expect(screen.getByRole('button', { name: 'End session' })).toBeInTheDocument();
   });
 
+  it("keyboard: 's' opens the Sound console", () => {
+    useDriftStore.setState({ showWelcome: false });
+    render(<App />);
+    expect(useDriftStore.getState().consoleOpen).toBe(false);
+    fireEvent.keyDown(window, { key: 's' });
+    expect(useDriftStore.getState().consoleOpen).toBe(true);
+  });
+
+  it("keyboard: '?' opens the shortcuts help sheet", () => {
+    useDriftStore.setState({ showWelcome: false });
+    render(<App />);
+    fireEvent.keyDown(window, { key: '?' });
+    expect(screen.getByText('Play / pause')).toBeInTheDocument();
+    expect(screen.getByText('Sound & tuning panel')).toBeInTheDocument();
+  });
+
   it('unlocks Atelier after three taps on the title', () => {
     useDriftStore.setState({ showWelcome: false, consoleOpen: true });
     const { container } = render(<App />);

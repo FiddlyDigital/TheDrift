@@ -5,12 +5,14 @@ import { SessionSheet } from './SessionSheet.jsx';
 import { JourneySheet } from './JourneySheet.jsx';
 import { InfoSheet } from './InfoSheet.jsx';
 import { ExportSheet } from './ExportSheet.jsx';
+import { HelpSheet } from './HelpSheet.jsx';
 
 const SHEETS = {
   session: SessionSheet,
   journey: JourneySheet,
   info: InfoSheet,
   export: ExportSheet,
+  help: HelpSheet,
 };
 
 // Modal bottom-sheet host (immersive view). Tapping the scrim or close button

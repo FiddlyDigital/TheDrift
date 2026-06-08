@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useDriftStore } from '../store/useDriftStore.js';
 import { ControlsPanel } from './controls/ControlsPanel.jsx';
 import { PlayIcon, PauseIcon, DiceIcon, SaveIcon, InstallIcon, LinkIcon, CloseIcon } from '../icons.jsx';
@@ -23,19 +23,42 @@ export function SoundConsole() {
   const installPrompt = useDriftStore((s) => s.installPrompt);
   const install = useDriftStore((s) => s.install);
   const share = useDriftStore((s) => s.share);
+  const asideRef = useRef(null);
+  const prevFocusRef = useRef(null);
 
-  // Escape closes the drawer
+  // Escape closes the drawer; Tab is trapped inside it while open
   useEffect(() => {
     if (!open) return;
-    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+    const onKey = (e) => {
+      if (e.key === "Escape") { setOpen(false); return; }
+      if (e.key !== "Tab" || !asideRef.current) return;
+      const focusables = asideRef.current.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      const list = Array.prototype.filter.call(focusables, (n) => !n.disabled && n.offsetParent !== null);
+      if (!list.length) return;
+      const first = list[0], last = list[list.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, setOpen]);
 
+  // move focus into the drawer on open; return it to the opener on close
+  useEffect(() => {
+    if (open) {
+      prevFocusRef.current = document.activeElement;
+      if (asideRef.current && asideRef.current.focus) asideRef.current.focus();
+    } else if (prevFocusRef.current && prevFocusRef.current.focus) {
+      prevFocusRef.current.focus();
+      prevFocusRef.current = null;
+    }
+  }, [open]);
+
   return (
     <>
       <div className={"console-scrim" + (open ? " show" : "")} onClick={() => setOpen(false)} aria-hidden="true"></div>
-      <aside className={"console" + (open ? " open" : "")} role="dialog" aria-label="Sound and tuning"
+      <aside ref={asideRef} tabIndex={-1} className={"console" + (open ? " open" : "")} role="dialog" aria-label="Sound and tuning"
         aria-hidden={!open} inert={!open ? true : undefined}>
         <header className="console-head">
           <div className="console-id">

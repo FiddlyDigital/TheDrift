@@ -6,6 +6,10 @@ import { createRenderer } from '../canvas.js';
 import { createWebGLRenderer } from '../webgl.js';
 import { useDriftStore } from '../store/useDriftStore.js';
 
+// Respect the OS "reduce motion" setting for the entrainment flicker — a live
+// query, so toggling the system preference takes effect without a reload.
+const REDUCE_MOTION_MQ = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : null;
+
 // The single animation loop. The 2D mandala always runs (it advances voice
 // progress, strikes and levels the 3D view also reads); the WebGL "space" view
 // and the DOM breath overlay run only while immersive in 3D. Reads live state
@@ -101,7 +105,8 @@ export function useVisualizer({ canvasRef, glCanvasRef, breathRingRef, breathLab
       // beat-entrainment flicker: gentle, smooth, and gated off for fast bands
       // (see entrainLum — photosensitivity safety).
       const beatHz = BINAURAL[ENGINE.params.binaural] || 0;
-      lum += entrainLum(st.entrainViz, beatHz, audioNow);
+      const entrainOn = st.entrainViz && !(REDUCE_MOTION_MQ && REDUCE_MOTION_MQ.matches);
+      lum += entrainLum(entrainOn, beatHz, audioNow);
       modRef.current.lum = lum;
 
       drawFrame(dim);

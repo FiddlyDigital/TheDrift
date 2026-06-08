@@ -30,8 +30,12 @@ export function createUiSlice(set, get, init) {
     breathPat: ls("loops.breath.pat") || "calm",
     breathRate: clampRate(Number(ls("loops.breath.rate"))),
     breathAudible: ls("loops.breath.audible") !== "0",   // default on
+    haptics: ls("loops.haptics") === "1",                // breath haptics, default off
+    hapticStrength: (() => { const v = Number(ls("loops.haptics.str")); return v >= 0 && v <= 1 ? v : 0.6; })(),
     beatmode: ls("loops.beatmode") || "binaural",        // binaural | monaural | isochronic
     entrainViz: ls("loops.entrain") === "1",
+    entrainConsented: ls("loops.entrain.ok") === "1",    // photosensitivity consent
+    entrainPrompt: false,
     entrainToast: false,
     section: ls("loops.section") || "scenes",
     expert: ls("loops.expert") === "1",
@@ -90,12 +94,38 @@ export function createUiSlice(set, get, init) {
       ENGINE.setBeatMode(next);
       set({ beatmode: next });
     },
-    toggleEntrainViz: () => {
-      const next = !get().entrainViz;
-      try { localStorage.setItem("loops.entrain", next ? "1" : "0"); } catch (e) {}
-      set({ entrainViz: next });
-      if (next) { set({ entrainToast: true }); setTimeout(() => set({ entrainToast: false }), 4200); }
+    setHaptics: (v) => {
+      const next = upd(v, get().haptics);
+      try { localStorage.setItem("loops.haptics", next ? "1" : "0"); } catch (e) {}
+      set({ haptics: next });
     },
+    setHapticStrength: (v) => {
+      const next = Math.max(0, Math.min(1, upd(v, get().hapticStrength)));
+      try { localStorage.setItem("loops.haptics.str", String(next)); } catch (e) {}
+      set({ hapticStrength: next });
+    },
+    // turning entrain off is always free; turning it on the first time asks for
+    // a photosensitivity-aware consent before any flicker happens.
+    toggleEntrainViz: () => {
+      if (get().entrainViz) {
+        try { localStorage.setItem("loops.entrain", "0"); } catch (e) {}
+        set({ entrainViz: false });
+        return;
+      }
+      if (!get().entrainConsented) { set({ entrainPrompt: true }); return; }
+      get()._enableEntrain();
+    },
+    _enableEntrain: () => {
+      try { localStorage.setItem("loops.entrain", "1"); } catch (e) {}
+      set({ entrainViz: true, entrainToast: true });
+      setTimeout(() => set({ entrainToast: false }), 4200);
+    },
+    confirmEntrain: () => {
+      try { localStorage.setItem("loops.entrain.ok", "1"); } catch (e) {}
+      set({ entrainConsented: true, entrainPrompt: false });
+      get()._enableEntrain();
+    },
+    dismissEntrainPrompt: () => set({ entrainPrompt: false }),
 
     toggleSpatial: () => {
       const next = !get().spatial;

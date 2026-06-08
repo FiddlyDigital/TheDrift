@@ -9,10 +9,13 @@ import { useWakeLock } from './hooks/useWakeLock.js';
 import { useInstallPrompt } from './hooks/useInstallPrompt.js';
 import { useImmersiveIdle } from './hooks/useImmersiveIdle.js';
 import { usePersistence } from './hooks/usePersistence.js';
+import { useBreathHaptics } from './hooks/useBreathHaptics.js';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts.js';
 import { Field } from './views/Field.jsx';
 import { WelcomeScreen } from './views/WelcomeScreen.jsx';
 import { SoundConsole } from './views/SoundConsole.jsx';
 import { ToastHost } from './views/ToastHost.jsx';
+import { EntrainConsent } from './views/EntrainConsent.jsx';
 import { Coachmark } from './views/immersive/Coachmark.jsx';
 import { ImmersiveLayer } from './views/immersive/ImmersiveLayer.jsx';
 import { Sheets } from './views/sheets/Sheets.jsx';
@@ -47,6 +50,8 @@ export default function App() {
   useWakeLock();
   useInstallPrompt();
   useImmersiveIdle();
+  useBreathHaptics();
+  useKeyboardShortcuts();
 
   return (
     <div className={"stage immersive"
@@ -58,6 +63,7 @@ export default function App() {
       <SoundConsole />
       <Coachmark />
       <Sheets />
+      <EntrainConsent />
       <ToastHost />
       <WelcomeScreen />
     </div>

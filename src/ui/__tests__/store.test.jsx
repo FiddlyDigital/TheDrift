@@ -73,3 +73,40 @@ describe('core slice coupling', () => {
     expect(st().wakeAt).toBeGreaterThan(0);
   });
 });
+
+describe('ui slice — haptics + entrain consent', () => {
+  it('haptics setters persist and clamp strength to 0..1', () => {
+    st().setHaptics(true);
+    expect(st().haptics).toBe(true);
+    expect(localStorage.getItem('loops.haptics')).toBe('1');
+    st().setHapticStrength(2);
+    expect(st().hapticStrength).toBe(1);
+    st().setHapticStrength(-1);
+    expect(st().hapticStrength).toBe(0);
+    expect(localStorage.getItem('loops.haptics.str')).toBe('0');
+  });
+
+  it('entrain light asks for consent before the first enable, then remembers it', () => {
+    localStorage.removeItem('loops.entrain.ok');
+    useDriftStore.setState({ entrainViz: false, entrainConsented: false, entrainPrompt: false });
+
+    // first enable only raises the prompt — nothing flickers yet
+    st().toggleEntrainViz();
+    expect(st().entrainViz).toBe(false);
+    expect(st().entrainPrompt).toBe(true);
+
+    // confirming enables it and records consent
+    st().confirmEntrain();
+    expect(st().entrainViz).toBe(true);
+    expect(st().entrainConsented).toBe(true);
+    expect(st().entrainPrompt).toBe(false);
+    expect(localStorage.getItem('loops.entrain.ok')).toBe('1');
+
+    // turning off is free; re-enabling no longer prompts
+    st().toggleEntrainViz();
+    expect(st().entrainViz).toBe(false);
+    st().toggleEntrainViz();
+    expect(st().entrainViz).toBe(true);
+    expect(st().entrainPrompt).toBe(false);
+  });
+});

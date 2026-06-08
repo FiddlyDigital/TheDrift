@@ -1348,6 +1348,31 @@ body {
 .breath-pop-rate { padding-top: 2px; }
 /* the shared Dial renders ink-on-paper; lighten it inside the dark popover */
 .breath-pop-rate .dial-name, .breath-pop-rate .dial-val { color: rgba(255, 255, 255, 0.78); }
+.breath-pop-strength { display: flex; flex-direction: column; gap: 7px; padding: 2px 2px 0; }
+.breath-pop-strength-label {
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+.breath-pop-strength .rng { accent-color: var(--accent); }
+
+/* ---- help sheet: keyboard shortcuts ---- */
+.shortcuts { margin: 18px 0 4px; display: flex; flex-direction: column; gap: 2px; }
+.shortcut-row {
+  display: flex; align-items: baseline; gap: 16px;
+  padding: 9px 2px; border-bottom: 1px solid var(--ink-line);
+}
+.shortcut-row dt { flex: none; width: 84px; margin: 0; }
+.shortcut-row dd {
+  margin: 0; font-family: var(--serif); font-size: 15px; color: var(--ink); line-height: 1.4;
+}
+kbd {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; color: var(--ink);
+  background: var(--paper-2); border: 1px solid var(--ink-line);
+  border-bottom-width: 2px; border-radius: 4px; padding: 3px 7px; white-space: nowrap;
+}
+
+/* narrow confirm dialog (entrain-light consent) */
+.sheet.sheet-narrow { width: min(420px, 100%); }
 
 /* ---- Sound & tuning console (slide-over drawer over the mandala) ---- */
 .console-scrim {

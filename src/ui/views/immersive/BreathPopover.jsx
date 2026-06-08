@@ -3,6 +3,11 @@ import { useDriftStore } from '../../store/useDriftStore.js';
 import { BREATH_ORDER, BREATH_PATTERNS, BREATH_RATE_MIN, BREATH_RATE_MAX } from '../../constants.js';
 import { BreathIcon } from '../../icons.jsx';
 import { Dial } from '../../components/Dial.jsx';
+import { Slider } from '../../components/Slider.jsx';
+
+// Whether this device can buzz — most desktops and iOS Safari cannot, so the
+// haptics controls only appear where they'd actually do something.
+const SUPPORTS_HAPTICS = typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
 
 // The single home for the breath guide, opened from the dock. Picking a pattern
 // turns the guide on (and re-picking the active one turns it off); the popover
@@ -16,6 +21,10 @@ export function BreathPopover() {
   const setBreathRate = useDriftStore((s) => s.setBreathRate);
   const breathAudible = useDriftStore((s) => s.breathAudible);
   const setBreathAudible = useDriftStore((s) => s.setBreathAudible);
+  const haptics = useDriftStore((s) => s.haptics);
+  const setHaptics = useDriftStore((s) => s.setHaptics);
+  const hapticStrength = useDriftStore((s) => s.hapticStrength);
+  const setHapticStrength = useDriftStore((s) => s.setHapticStrength);
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
 
@@ -56,6 +65,21 @@ export function BreathPopover() {
                 onClick={() => setBreathAudible((v) => !v)}>
                 {breathAudible ? "Breathing with sound" : "Silent guide"}
               </button>
+              {SUPPORTS_HAPTICS && (
+                <>
+                  <button className={"breath-pop-toggle" + (haptics ? " on" : "")}
+                    onClick={() => setHaptics((v) => !v)}>
+                    {haptics ? "Haptic pacing on" : "Haptic pacing off"}
+                  </button>
+                  {haptics && (
+                    <div className="breath-pop-strength">
+                      <span className="breath-pop-strength-label">Strength</span>
+                      <Slider name="Haptic strength" valuetext={Math.round(hapticStrength * 100) + "%"}
+                        min={0.1} max={1} step={0.1} value={hapticStrength} onChange={setHapticStrength} />
+                    </div>
+                  )}
+                </>
+              )}
               {breathPat === "calm" && (
                 <div className="breath-pop-rate">
                   <Dial name="Rate" value={breathRate} label={breathRate.toFixed(1) + "/min"}
