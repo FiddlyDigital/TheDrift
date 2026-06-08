@@ -5,9 +5,15 @@ import { BreathIcon } from '../../icons.jsx';
 import { Dial } from '../../components/Dial.jsx';
 import { Slider } from '../../components/Slider.jsx';
 
-// Whether this device can buzz — most desktops and iOS Safari cannot, so the
-// haptics controls only appear where they'd actually do something.
-const SUPPORTS_HAPTICS = typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
+// Whether this device can actually buzz. The Vibration API exists on desktop
+// Chrome but is a no-op (no motor), and is absent on iOS — so we also require a
+// touch device, where a vibration motor is a safe bet. Avoids showing a dead
+// control on laptops.
+const SUPPORTS_HAPTICS =
+  typeof navigator !== 'undefined' &&
+  typeof navigator.vibrate === 'function' &&
+  ((navigator.maxTouchPoints || 0) > 0 ||
+    (typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches));
 
 // The single home for the breath guide, opened from the dock. Picking a pattern
 // turns the guide on (and re-picking the active one turns it off); the popover
@@ -68,7 +74,13 @@ export function BreathPopover() {
               {SUPPORTS_HAPTICS && (
                 <>
                   <button className={"breath-pop-toggle" + (haptics ? " on" : "")}
-                    onClick={() => setHaptics((v) => !v)}>
+                    onClick={() => {
+                      const next = !haptics;
+                      setHaptics(next);
+                      // buzz inside the click (a real user gesture) so capable
+                      // devices confirm support immediately; a no-op elsewhere
+                      if (next) { try { navigator.vibrate([28, 45, 28]); } catch (e) {} }
+                    }}>
                     {haptics ? "Haptic pacing on" : "Haptic pacing off"}
                   </button>
                   {haptics && (
