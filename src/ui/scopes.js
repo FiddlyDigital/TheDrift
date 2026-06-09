@@ -89,6 +89,7 @@ export function createSpectrogram({ ctx, canvas, getAnalyser, getPalette }) {
 export function createVectorscope({ ctx, canvas, getAnalyser, getPalette }) {
   let tdL = null, tdR = null;
   let lastBg = null, bgRgb = "12,9,5";
+  let agc = 1;   // smoothed auto-gain so a quiet mix still fills the panel
 
   function reset() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -120,13 +121,25 @@ export function createVectorscope({ ctx, canvas, getAnalyser, getPalette }) {
     a.left.getByteTimeDomainData(tdL);
     a.right.getByteTimeDomainData(tdR);
 
-    const k = Math.min(w, h) * 0.42 * 0.707;
+    // auto-gain: the ambient output sits low, so normalise to the current peak
+    // — the figure's shape matters more here than its absolute level.
+    let peak = 0;
+    for (let i = 0; i < n; i++) {
+      const al = Math.abs(tdL[i] - 128), ar = Math.abs(tdR[i] - 128);
+      if (al > peak) peak = al;
+      if (ar > peak) peak = ar;
+    }
+    peak /= 128;                                       // 0..1
+    const want = peak > 0.004 ? 0.95 / peak : agc;     // hold gain through near-silence
+    agc += (Math.min(want, 60) - agc) * 0.12;          // smoothed + capped
+
+    const R0 = Math.min(w, h) * 0.26;
     ctx.beginPath();
     for (let i = 0; i < n; i++) {
-      const L = (tdL[i] - 128) / 128;
-      const R = (tdR[i] - 128) / 128;
-      const x = cx + (L - R) * k;
-      const y = cy - (L + R) * k;
+      const L = ((tdL[i] - 128) / 128) * agc;
+      const R = ((tdR[i] - 128) / 128) * agc;
+      const x = cx + (L - R) * R0;
+      const y = cy - (L + R) * R0;
       if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
     // glow via two passes — cheaper and softer than per-frame shadowBlur
