@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "shots": "playwright test"
+    "shots": "playwright test",
+    "manual:shots": "node manual/capture.mjs",
+    "manual:pdf": "node manual/build-manual.mjs"
   },
   "dependencies": {
     "preact": "^10.26.4",
