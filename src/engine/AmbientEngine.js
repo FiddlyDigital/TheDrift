@@ -535,7 +535,16 @@ AmbientEngine.prototype.getScopeAnalysers = function () {
   this.fade.connect(splitter);
   splitter.connect(left, 0);
   splitter.connect(right, 1);
-  this._scope = { spec, left, right, _splitter: splitter };
+  // The spectrogram analyser works by tapping `fade` directly (already pulled
+  // to destination). The splitter is a processing node, though, and only runs
+  // if its branch reaches the destination — so terminate it at a muted sink,
+  // else both analysers read silence (a dead centre dot). Gain 0 = inaudible.
+  const sink = ctx.createGain();
+  sink.gain.value = 0;
+  left.connect(sink);
+  right.connect(sink);
+  sink.connect(ctx.destination);
+  this._scope = { spec, left, right, _splitter: splitter, _sink: sink };
   return this._scope;
 };
 

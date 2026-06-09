@@ -68,6 +68,8 @@ describe('engine getScopeAnalysers', () => {
     e.ctx = {
       createAnalyser: () => { nAna++; return fakeAnalyser(); },
       createChannelSplitter: () => { nSplit++; return { connect: vi.fn() }; },
+      createGain: () => ({ gain: { value: 1 }, connect: vi.fn() }),
+      destination: {},
     };
     e.fade = { connect: vi.fn() };
 
