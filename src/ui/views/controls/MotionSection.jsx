@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useDriftStore } from '../../store/useDriftStore.js';
 import { parseVoices } from '../../../engine/index.js';
 import { Dial } from '../../components/Dial.jsx';
@@ -11,7 +11,7 @@ import {
 export function MotionSection() {
   const params = useDriftStore((s) => s.params);
   const update = useDriftStore((s) => s.update);
-  const loomSpecs = parseVoices(params.voices);
+  const loomSpecs = useMemo(() => parseVoices(params.voices), [params.voices]);
 
   return (
     <div className="panel-body" role="tabpanel" id="panel-motion" aria-labelledby="tab-motion">
