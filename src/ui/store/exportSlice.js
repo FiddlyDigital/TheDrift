@@ -7,20 +7,33 @@ export function createExportSlice(set, get) {
     exportMin: 2,
     exportState: "idle",   // idle | rendering | done | error
     exportPct: 0,
+    exportError: null,
 
     setExportMin: (v) => set({ exportMin: v }),
 
     doExport: (minutes) => {
       if (get().exportState === "rendering") return;
-      set({ exportState: "rendering", exportPct: 0 });
+      set({ exportState: "rendering", exportPct: 0, exportError: null });
       let p = 0;
       const ticker = setInterval(() => {
         p = Math.min(0.92, p + 0.04 + Math.random() * 0.05);
         set({ exportPct: p });
       }, 220);
+      const fail = (e) => {
+        clearInterval(ticker);
+        console.error("Export failed:", e);
+        set({ exportState: "error", exportError: String(e?.message || e) });
+      };
       const sceneLabel = get().activeScene || get().activeSaved || ENGINE.params.ensemble;
       setTimeout(() => {
-        ENGINE.renderOffline({ seconds: minutes * 60, params: ENGINE.params })
+        let renderPromise;
+        try {
+          renderPromise = ENGINE.renderOffline({ seconds: minutes * 60, params: ENGINE.params });
+        } catch (e) {
+          fail(e);
+          return;
+        }
+        renderPromise
           .then((buf) => {
             let peak = 0;
             for (let c = 0; c < buf.numberOfChannels; c++) {
@@ -45,10 +58,7 @@ export function createExportSlice(set, get) {
             clearInterval(ticker);
             set({ exportPct: 1, exportState: "done" });
           })
-          .catch(() => {
-            clearInterval(ticker);
-            set({ exportState: "error" });
-          });
+          .catch(fail);
       }, 60);
     },
   };

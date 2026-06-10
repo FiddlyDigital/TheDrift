@@ -1612,7 +1612,7 @@ AmbientEngine.prototype._journeyStep = function (now) {
 
 AmbientEngine.prototype.play = function () {
   this.ensureContext();
-  if (this.ctx.state === "suspended") this.ctx.resume();
+  if (this.ctx.state === "suspended") { const r = this.ctx.resume(); if (r && r.catch) r.catch(function (e) { console.warn("AudioContext resume failed (play):", e); }); }
   if (!this.voices.length) this.regenerate();
   else { this._rebase(); this._rerouteVoices(); }
   // make sure the active field is at full level (e.g. resuming mid-crossfade)
@@ -1758,7 +1758,7 @@ AmbientEngine.prototype._rebase = function () {
 // it speaks clearly over (or after) the music. opts: octave, vel, decay, delay.
 AmbientEngine.prototype.strikeBell = function (opts) {
   this.ensureContext();
-  if (this.ctx.state === "suspended") { const r = this.ctx.resume(); if (r && r.catch) r.catch(function () {}); }
+  if (this.ctx.state === "suspended") { const r = this.ctx.resume(); if (r && r.catch) r.catch(function (e) { console.warn("AudioContext resume failed (strikeBell):", e); }); }
   opts = opts || {};
   const ctx = this.ctx;
   const now = ctx.currentTime + (opts.delay || 0);
@@ -1832,7 +1832,7 @@ AmbientEngine.prototype._glitchInst = function () {
 // opts: { pitch01 (0..1 height), pan (-1..1), vel, glitch }
 AmbientEngine.prototype.dropNote = function (opts) {
   this.ensureContext();
-  if (this.ctx.state === "suspended") { const r = this.ctx.resume(); if (r && r.catch) r.catch(function () {}); }
+  if (this.ctx.state === "suspended") { const r = this.ctx.resume(); if (r && r.catch) r.catch(function (e) { console.warn("AudioContext resume failed (dropNote):", e); }); }
   opts = opts || {};
   const pool = (buildScalePool(this.params) || {}).pool;
   const midi = poolNote(pool, opts.pitch01 == null ? 0.5 : opts.pitch01);

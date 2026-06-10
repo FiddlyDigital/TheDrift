@@ -1,5 +1,6 @@
 import { KEYS, STR_KEYS, INT_KEYS, NUM_DEFAULTS, EXPERT_KEYS } from './constants.js';
 import { MOODS, ENSEMBLES } from '../engine/constants.js';
+import { lsGetJson, lsSetJson } from './store/storage.js';
 
 // an expert key is "in use" only when it differs from its default — used to
 // keep ordinary share links free of Atelier noise
@@ -16,11 +17,8 @@ export function readConfig() {
   const out = {};
   for (const k of KEYS) if (sp.has(k)) { out[k] = sp.get(k); any = true; }
   if (!any) {
-    try {
-      const s = localStorage.getItem("loops.config");
-      if (s) return JSON.parse(s);
-    } catch (e) {}
-    return null;
+    const cfg = lsGetJson("loops.config", null);
+    return cfg;
   }
   const cfg = {};
   for (const k of KEYS) {
@@ -31,7 +29,7 @@ export function readConfig() {
 }
 
 export function persist(p) {
-  try { localStorage.setItem("loops.config", JSON.stringify(p)); } catch (e) {}
+  lsSetJson("loops.config", p);
   const sp = new URLSearchParams();
   for (const k of KEYS) {
     // skip default-valued expert keys so non-Atelier links stay clean
@@ -45,11 +43,10 @@ export function persist(p) {
 // ---- personal library: keep the drifts you love ---------------------
 const LIB_KEY = "loops.library";
 export function readLibrary() {
-  try { const s = localStorage.getItem(LIB_KEY); return s ? JSON.parse(s) : []; }
-  catch (e) { return []; }
+  return lsGetJson(LIB_KEY, []);
 }
 export function writeLibrary(list) {
-  try { localStorage.setItem(LIB_KEY, JSON.stringify(list)); } catch (e) {}
+  lsSetJson(LIB_KEY, list);
 }
 export function snapshotName(p) {
   const mood = MOODS[p.mood] ? MOODS[p.mood].name : "Drift";

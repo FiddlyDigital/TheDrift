@@ -1,5 +1,6 @@
 import { ENGINE } from '../../engine/index.js';
 import { createMidiManager, isMidiSupported, parseMidi } from '../midi.js';
+import { lsGetJson, lsSetJson, lsSet } from './storage.js';
 
 const upd = (v, prev) => (typeof v === 'function' ? v(prev) : v);
 
@@ -41,8 +42,8 @@ MIDI_CONTROLS.forEach((c) => { MIDI_CONTROL_BY_ID[c.id] = c; });
 // route incoming CC/notes to their mapped controls.
 export function createMidiSlice(set, get) {
   let manager = null;
-  const persistMap = (m) => { try { localStorage.setItem("loops.midimap", JSON.stringify(m)); } catch (e) {} };
-  const initMap = (() => { try { return JSON.parse(localStorage.getItem("loops.midimap") || "{}"); } catch (e) { return {}; } })();
+  const persistMap = (m) => lsSetJson("loops.midimap", m);
+  const initMap = lsGetJson("loops.midimap", {});
 
   return {
     midiSupported: isMidiSupported(),
@@ -66,8 +67,8 @@ export function createMidiSlice(set, get) {
       try {
         const ins = await manager.enable();
         set({ midiInputs: ins, midiEnabled: true });
-        try { localStorage.setItem("loops.midi", "1"); } catch (e) {}
-      } catch (e) { /* permission denied / unsupported */ }
+        lsSet("loops.midi", "1");
+      } catch (e) { console.warn("MIDI enable failed:", e); }
     },
 
     onMidi: (data) => {

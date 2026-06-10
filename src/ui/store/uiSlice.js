@@ -1,9 +1,9 @@
 import { ENGINE } from '../../engine/index.js';
 import { BREATH_RATE_DEFAULT, BREATH_RATE_MIN, BREATH_RATE_MAX } from '../constants.js';
+import { lsGet, lsSet } from './storage.js';
 
 const upd = (v, prev) => (typeof v === 'function' ? v(prev) : v);
 const clampRate = (v) => Math.min(BREATH_RATE_MAX, Math.max(BREATH_RATE_MIN, v || BREATH_RATE_DEFAULT));
-const ls = (k, d) => { try { return localStorage.getItem(k); } catch (e) { return d; } };
 // reflect the chosen palette onto <html data-theme> so the CSS variables swap;
 // "paper" is the default and carries no attribute.
 const applyTheme = (t) => {
@@ -22,14 +22,14 @@ export function createUiSlice(set, get, init) {
   })();
   let titleTap = { n: 0, t: 0 };
 
-  const initialTheme = ls("loops.theme") || "paper";
+  const initialTheme = lsGet("loops.theme") || "paper";
   applyTheme(initialTheme);   // before first paint, so no light-theme flash
 
   return {
     theme: initialTheme,                // "paper" | "midnight"
     immersive: true,
     consoleOpen: false,                 // the slide-over Sound & tuning drawer
-    coachDone: ls("loops.coach") === "1",
+    coachDone: lsGet("loops.coach") === "1",
     coachVisible: false,                // one-time dock hint after Begin
     vizMode: "mandala",                 // "mandala" | "space" | "ganzfeld"
     vizUiVisible: true,
@@ -38,27 +38,27 @@ export function createUiSlice(set, get, init) {
     showWelcome: firstVisit,
     welcomeHiding: false,
     copied: false,
-    breathOn: ls("loops.breath.on") === "1",
-    breathPat: ls("loops.breath.pat") || "calm",
-    breathRate: clampRate(Number(ls("loops.breath.rate"))),
-    breathAudible: ls("loops.breath.audible") !== "0",   // default on
-    haptics: ls("loops.haptics") === "1",                // breath haptics, default off
-    hapticStrength: (() => { const v = Number(ls("loops.haptics.str")); return v >= 0 && v <= 1 ? v : 0.6; })(),
-    beatmode: ls("loops.beatmode") || "binaural",        // binaural | monaural | isochronic
-    entrainViz: ls("loops.entrain") === "1",
-    entrainConsented: ls("loops.entrain.ok") === "1",    // photosensitivity consent
+    breathOn: lsGet("loops.breath.on") === "1",
+    breathPat: lsGet("loops.breath.pat") || "calm",
+    breathRate: clampRate(Number(lsGet("loops.breath.rate"))),
+    breathAudible: lsGet("loops.breath.audible") !== "0",   // default on
+    haptics: lsGet("loops.haptics") === "1",                // breath haptics, default off
+    hapticStrength: (() => { const v = Number(lsGet("loops.haptics.str")); return v >= 0 && v <= 1 ? v : 0.6; })(),
+    beatmode: lsGet("loops.beatmode") || "binaural",        // binaural | monaural | isochronic
+    entrainViz: lsGet("loops.entrain") === "1",
+    entrainConsented: lsGet("loops.entrain.ok") === "1",    // photosensitivity consent
     entrainPrompt: false,
     entrainToast: false,
-    ganzfeldStrobe: ls("loops.ganzfeld.strobe") === "1",       // allow the deep-phase flicker (off by default)
-    ganzfeldStrobeConsented: ls("loops.ganzfeld.ok") === "1",  // its own photosensitivity consent
+    ganzfeldStrobe: lsGet("loops.ganzfeld.strobe") === "1",       // allow the deep-phase flicker (off by default)
+    ganzfeldStrobeConsented: lsGet("loops.ganzfeld.ok") === "1",  // its own photosensitivity consent
     ganzfeldStrobePrompt: false,
     ganzfeldToast: false,
-    section: ls("loops.section") || "scenes",
-    expert: ls("loops.expert") === "1",
+    section: lsGet("loops.section") || "scenes",
+    expert: lsGet("loops.expert") === "1",
     expertToast: false,
-    spatial: ls("loops.spatial") === "1",
+    spatial: lsGet("loops.spatial") === "1",
     spatialToast: false,
-    playAlong: ls("loops.playalong") === "1",
+    playAlong: lsGet("loops.playalong") === "1",
     playAlongToast: false,
     installPrompt: null,
 

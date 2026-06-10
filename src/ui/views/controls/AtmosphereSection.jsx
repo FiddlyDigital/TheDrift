@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useDriftStore } from '../../store/useDriftStore.js';
 import { TEXTURES, BRAINWAVES, BEAT_MODES } from '../../constants.js';
 import { ChipGroup } from './ChipGroup.jsx';
@@ -12,7 +12,7 @@ export function AtmosphereSection() {
   const toggleTexture = useDriftStore((s) => s.toggleTexture);
   const beatmode = useDriftStore((s) => s.beatmode);
   const setBeatMode = useDriftStore((s) => s.setBeatMode);
-  const texSet = new Set((params.texture || "").split(".").filter(Boolean));
+  const texSet = useMemo(() => new Set((params.texture || "").split(".").filter(Boolean)), [params.texture]);
 
   const beatOn = params.binaural !== "off";
 

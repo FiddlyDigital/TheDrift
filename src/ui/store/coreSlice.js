@@ -6,8 +6,7 @@ import {
   GANZFELD_PROGRAM, ganzfeldPhaseAt,
 } from '../constants.js';
 import { easeInOut, lerp, driftSegMs, driftPick } from './util.js';
-
-const num = (k, d) => { try { const v = localStorage.getItem(k); return v != null ? +v : d; } catch (e) { return d; } };
+import { lsGetNum } from './storage.js';
 
 // The cohesive "core": parameters, transport, the five timer systems, guided
 // journeys and endless drift. These concerns share the engine, the play clock
@@ -33,7 +32,7 @@ export function createCoreSlice(set, get, init) {
     playing: false,
     elapsed: 0,
     startedAt: 0,
-    volume: num('loops.volume', 0.85),
+    volume: lsGetNum('loops.volume', 0.85),
     activeScene: saved ? null : WELCOME.name,
     activeSaved: null,
     families: [],
@@ -44,8 +43,8 @@ export function createCoreSlice(set, get, init) {
     // wake timer
     wakeIn: 0, wakeAt: 0, wakeRising: false, _waking: false,
     // session timer
-    sessionPick: num('loops.session.dur', 10),
-    sessionInterval: num('loops.session.interval', 0),
+    sessionPick: lsGetNum('loops.session.dur', 10),
+    sessionInterval: lsGetNum('loops.session.interval', 0),
     sessionEnd: 0, sessionRemain: 0,
     _nextBell: 0, _sessionEnding: false, _sessionTotal: 0,
     // guided journey
