@@ -4,6 +4,7 @@ import { getBreathPattern, entrainLum } from '../constants.js';
 import { BINAURAL } from '../../engine/constants.js';
 import { createRenderer } from '../canvas.js';
 import { createWebGLRenderer } from '../webgl.js';
+import { createGanzfeldRenderer } from '../ganzfeld.js';
 import { useDriftStore } from '../store/useDriftStore.js';
 
 // Respect the OS "reduce motion" setting for the entrainment flicker — a live
@@ -15,7 +16,7 @@ const REDUCE_MOTION_MQ = typeof matchMedia === 'function' ? matchMedia('(prefers
 // and the DOM breath overlay run only while immersive in 3D. Reads live state
 // non-reactively from the store via getState(); ref-shaped adapters let the
 // renderers read immersive/breath/journeyPulse without changing canvas.js.
-export function useVisualizer({ canvasRef, glCanvasRef, breathRingRef, breathLabelRef, breathCountRef }) {
+export function useVisualizer({ canvasRef, glCanvasRef, ganzfeldCanvasRef, breathRingRef, breathLabelRef, breathCountRef }) {
   // visual-only internals (written and read inside the loop / renderer)
   const ripplesRef = useRef([]);
   const levRef = useRef({ level: 0, low: 0, high: 0 });
@@ -26,6 +27,7 @@ export function useVisualizer({ canvasRef, glCanvasRef, breathRingRef, breathLab
   const bellPulseRef = useRef(null);
   const cameraRef = useRef(null);
   const glRendererRef = useRef(null);
+  const ganzfeldRendererRef = useRef(null);
 
   // imperative ripple emitter, so a tap (play-along) can ring at the touch
   // point. Pushes into the same ripplesRef the renderer animates each frame.
@@ -48,6 +50,17 @@ export function useVisualizer({ canvasRef, glCanvasRef, breathRingRef, breathLab
     const journeyPulseRef = {
       get current() { return store.getState().journeyPulse; },
       set current(v) { store.setState({ journeyPulse: v }); },
+    };
+    // the ganzfeld renderer reads its own clock + the live strobe gate; reduce-
+    // motion (and the per-session opt-in) decide whether the flicker runs.
+    const ganzfeldState = () => {
+      const st = store.getState();
+      const now = ENGINE.ctx ? ENGINE.ctx.currentTime : performance.now() / 1000;
+      return {
+        elapsed: now - (st._ganzfeldStartAudio || 0),
+        allowStrobe: !!st._ganzfeldStrobe,
+        reduceMotion: !!(REDUCE_MOTION_MQ && REDUCE_MOTION_MQ.matches),
+      };
     };
 
     let raf;
@@ -109,6 +122,24 @@ export function useVisualizer({ canvasRef, glCanvasRef, breathRingRef, breathLab
       lum += entrainLum(entrainOn, beatHz, audioNow);
       modRef.current.lum = lum;
 
+      // ganzfeld owns the screen when active; the mandala/space canvases sit
+      // hidden beneath it, so skip their (now-pointless) work entirely.
+      const inGanzfeld = st.vizMode === "ganzfeld" && st.immersive;
+      if (inGanzfeld) {
+        if (ganzfeldCanvasRef && ganzfeldCanvasRef.current) {
+          if (!ganzfeldRendererRef.current) {
+            ganzfeldRendererRef.current = createGanzfeldRenderer({
+              canvas: ganzfeldCanvasRef.current,
+              getState: ganzfeldState,
+            });
+          }
+          ganzfeldRendererRef.current.draw(dim);
+        }
+        raf = requestAnimationFrame(loop);
+        return;
+      }
+      if (ganzfeldRendererRef.current) { ganzfeldRendererRef.current.destroy(); ganzfeldRendererRef.current = null; }
+
       drawFrame(dim);
       const in3D = st.vizMode === "space" && st.immersive;
       if (in3D && glCanvasRef.current) {
@@ -136,8 +167,9 @@ export function useVisualizer({ canvasRef, glCanvasRef, breathRingRef, breathLab
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", onResize);
       if (glRendererRef.current) { glRendererRef.current.destroy(); glRendererRef.current = null; }
+      if (ganzfeldRendererRef.current) { ganzfeldRendererRef.current.destroy(); ganzfeldRendererRef.current = null; }
     };
-  }, [canvasRef, glCanvasRef, breathRingRef, breathLabelRef, breathCountRef]);
+  }, [canvasRef, glCanvasRef, ganzfeldCanvasRef, breathRingRef, breathLabelRef, breathCountRef]);
 
   return { emitRipple };
 }

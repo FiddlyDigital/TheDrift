@@ -3,6 +3,7 @@ import { useDriftStore } from '../../store/useDriftStore.js';
 import { CloseIcon } from '../../icons.jsx';
 import { SessionSheet } from './SessionSheet.jsx';
 import { JourneySheet } from './JourneySheet.jsx';
+import { GanzfeldSheet } from './GanzfeldSheet.jsx';
 import { InfoSheet } from './InfoSheet.jsx';
 import { ExportSheet } from './ExportSheet.jsx';
 import { HelpSheet } from './HelpSheet.jsx';
@@ -10,6 +11,7 @@ import { HelpSheet } from './HelpSheet.jsx';
 const SHEETS = {
   session: SessionSheet,
   journey: JourneySheet,
+  ganzfeld: GanzfeldSheet,
   info: InfoSheet,
   export: ExportSheet,
   help: HelpSheet,

@@ -14,12 +14,16 @@ export function VizCorner() {
 
   return (
     <div className={"viz-corner" + (vizUiVisible ? " show" : "")}>
-      <button className={"viz-chip mini" + (vizMode === "space" ? " active" : "")}
-        onClick={() => setVizMode((m) => (m === "space" ? "mandala" : "space"))}
-        aria-label={vizMode === "space" ? "Switch to mandala" : "Switch to 3D space"}
-        title={vizMode === "space" ? "Mandala view" : "3D space view"}>
-        {vizMode === "space" ? <VizIcon /> : <CubeIcon />}
-      </button>
+      {/* the mandala/space toggle is meaningless over the featureless ganzfeld
+          field — end the session from its sheet to return */}
+      {vizMode !== "ganzfeld" && (
+        <button className={"viz-chip mini" + (vizMode === "space" ? " active" : "")}
+          onClick={() => setVizMode((m) => (m === "space" ? "mandala" : "space"))}
+          aria-label={vizMode === "space" ? "Switch to mandala" : "Switch to 3D space"}
+          title={vizMode === "space" ? "Mandala view" : "3D space view"}>
+          {vizMode === "space" ? <VizIcon /> : <CubeIcon />}
+        </button>
+      )}
       <button className="viz-chip mini" onClick={toggleFullscreen}
         aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"} title={isFullscreen ? "Windowed" : "Fullscreen"}>
         {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}

@@ -162,6 +162,17 @@ body {
   cursor: grab;
 }
 .field-gl.show:active { cursor: grabbing; }
+/* the featureless Ganzfeld field — opaque, above the mandala/space canvases */
+.field-ganzfeld {
+  position: absolute;
+  top: 6px; left: 0;
+  width: 100%;
+  z-index: 2;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.1s ease;
+}
+.field-ganzfeld.show { opacity: 1; }
 .field-hint {
   position: absolute;
   top: 14px; right: 4px;
@@ -602,6 +613,38 @@ body {
 }
 .session-begin.end:hover { border-color: var(--accent); color: var(--accent); background: transparent; }
 
+/* ---- ganzfeld sheet ---- */
+.ganz-phases { display: flex; flex-direction: column; gap: 2px; margin: 16px 0 18px; }
+.ganz-phase {
+  display: grid; grid-template-columns: 38px 96px 1fr; align-items: baseline; gap: 12px;
+  padding: 8px 0; border-top: 1px solid var(--ink-line);
+}
+.ganz-phase:last-child { border-bottom: 1px solid var(--ink-line); }
+.ganz-phase-at { font-family: var(--mono); font-size: 11px; color: var(--ink-3); letter-spacing: 0.08em; }
+.ganz-phase-name { font-family: var(--serif); font-size: 15px; color: var(--ink); }
+.ganz-phase-note { font-family: var(--serif); font-style: italic; font-size: 13px; color: var(--ink-3); }
+.ganz-strobe {
+  width: 100%; text-align: left; cursor: pointer;
+  display: flex; align-items: center; gap: 14px;
+  background: var(--paper-2); border: 1px solid var(--ink-line); border-radius: 3px;
+  padding: 13px 15px; margin-bottom: 14px;
+  transition: border-color .2s ease, background .2s ease;
+}
+.ganz-strobe:hover { border-color: var(--accent); }
+.ganz-strobe.on { border-color: var(--accent); background: var(--paper-3); }
+.ganz-strobe-text { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+.ganz-strobe-title { font-family: var(--serif); font-size: 15px; color: var(--ink); }
+.ganz-strobe-sub { font-family: var(--serif); font-style: italic; font-size: 12.5px; color: var(--ink-3); line-height: 1.4; }
+.ganz-strobe-state {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-2); flex: none;
+}
+.ganz-strobe.on .ganz-strobe-state { color: var(--accent); }
+.ganz-tip {
+  font-family: var(--serif); font-style: italic; font-size: 13px; color: var(--ink-3);
+  margin: 0 0 16px; line-height: 1.5;
+}
+
 .session-live { display: flex; flex-direction: column; gap: 18px; align-items: center; padding: 14px 0 8px; }
 .session-clock {
   font-family: var(--serif); font-weight: 300; font-size: 72px; line-height: 1;
@@ -782,6 +825,7 @@ body {
 .stage.immersive .field { height: 100vh; touch-action: none; }
 .stage.immersive.play-along .field { cursor: crosshair; }
 .stage.immersive .field-gl { top: 0; height: 100vh; }
+.stage.immersive .field-ganzfeld { top: 0; height: 100vh; }
 .stage.immersive .field-hint,
 .stage.immersive .idle-veil { display: none; }
 .stage.hide-cursor, .stage.hide-cursor .field-wrap { cursor: none; }

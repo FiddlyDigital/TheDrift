@@ -16,6 +16,7 @@ import { WelcomeScreen } from './views/WelcomeScreen.jsx';
 import { SoundConsole } from './views/SoundConsole.jsx';
 import { ToastHost } from './views/ToastHost.jsx';
 import { EntrainConsent } from './views/EntrainConsent.jsx';
+import { GanzfeldConsent } from './views/GanzfeldConsent.jsx';
 import { Coachmark } from './views/immersive/Coachmark.jsx';
 import { ImmersiveLayer } from './views/immersive/ImmersiveLayer.jsx';
 import { Sheets } from './views/sheets/Sheets.jsx';
@@ -36,13 +37,14 @@ export default function App() {
   // the visualizer loop, so they're created here and passed where needed.
   const canvasRef = useRef(null);
   const glCanvasRef = useRef(null);
+  const ganzfeldCanvasRef = useRef(null);
   const breathRingRef = useRef(null);
   const breathLabelRef = useRef(null);
   const breathCountRef = useRef(null);
 
   // effect hooks (each reads/drives the store)
   usePersistence();
-  const { emitRipple } = useVisualizer({ canvasRef, glCanvasRef, breathRingRef, breathLabelRef, breathCountRef });
+  const { emitRipple } = useVisualizer({ canvasRef, glCanvasRef, ganzfeldCanvasRef, breathRingRef, breathLabelRef, breathCountRef });
   usePlayAlong({ canvasRef, emitRipple });
   useTimers();
   useMidiBridge();
@@ -58,12 +60,13 @@ export default function App() {
       + (!vizUiVisible && !consoleOpen ? " hide-cursor" : "")
       + (consoleOpen ? " console-open" : "")
       + (playAlong && !consoleOpen && vizMode === "mandala" ? " play-along" : "")}>
-      <Field canvasRef={canvasRef} glCanvasRef={glCanvasRef} />
+      <Field canvasRef={canvasRef} glCanvasRef={glCanvasRef} ganzfeldCanvasRef={ganzfeldCanvasRef} />
       <ImmersiveLayer breathRingRef={breathRingRef} breathLabelRef={breathLabelRef} breathCountRef={breathCountRef} />
       <SoundConsole />
       <Coachmark />
       <Sheets />
       <EntrainConsent />
+      <GanzfeldConsent />
       <ToastHost />
       <WelcomeScreen />
     </div>

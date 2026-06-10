@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useDriftStore } from '../../store/useDriftStore.js';
-import { SlidersIcon, BellIcon, RouteIcon, InfoIcon, RaindropIcon, HeadphonesIcon, SunriseIcon, MoreIcon } from '../../icons.jsx';
+import { SlidersIcon, BellIcon, RouteIcon, InfoIcon, RaindropIcon, HeadphonesIcon, SunriseIcon, GanzfeldIcon, MoreIcon } from '../../icons.jsx';
 import { BreathPopover } from './BreathPopover.jsx';
 import { fmt } from '../../format.js';
 
@@ -59,6 +59,7 @@ export function Dock() {
   const entrainViz = useDriftStore((s) => s.entrainViz);
   const toggleEntrainViz = useDriftStore((s) => s.toggleEntrainViz);
   const beatOn = useDriftStore((s) => s.params.binaural !== "off");
+  const ganzfeld = useDriftStore((s) => s.ganzfeld);
 
   // one description list, rendered inline (wide) and inside More (mobile)
   const secondary = [
@@ -68,6 +69,8 @@ export function Dock() {
       label: "Spatial audio", title: spatial ? "Spatial audio on (headphones)" : "Spatial audio off" },
     beatOn && { key: "entrain", toggle: true, on: entrainViz, onClick: toggleEntrainViz, icon: <SunriseIcon />,
       label: "Entrain light", title: entrainViz ? "Entrain light on — pulsing with the beat" : "Entrain light — pulse with the beat" },
+    { key: "ganzfeld", toggle: false, on: !!ganzfeld, onClick: () => setSheet((s) => (s === "ganzfeld" ? null : "ganzfeld")), icon: <GanzfeldIcon />,
+      label: "Ganzfeld", title: ganzfeld ? "Ganzfeld — a featureless field (running)" : "Ganzfeld — a featureless hypnagogic field" },
     { key: "info", toggle: false, on: false, onClick: () => setSheet((s) => (s === "info" ? null : "info")), icon: <InfoIcon />,
       label: "About The Drift", title: "About The Drift" },
   ].filter(Boolean);

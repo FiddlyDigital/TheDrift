@@ -186,3 +186,87 @@ export const WAKE_RISE = 90;                    // seconds of rise from silence
 export const SESSION_OPTS = [5, 10, 15, 20, 30, 45];   // minutes
 export const INTERVAL_OPTS = [0, 3, 5, 10];             // interval-bell spacing, 0 = none
 export const SESSION_DUCK = 7;                          // seconds the field fades under the closing bells
+
+// ---- Ganzfeld mode: a featureless, phased hypnagogic field ----------------
+// The structured mandala breaks the effect the moment the eye finds an edge, so
+// Ganzfeld replaces it with a deliberately edge-free colour field that evolves
+// through a timed program, and takes the audio over — the generative loops mute
+// and only the brainwave beat + pink/brown noise remain. Every change is
+// transient (engine-level only) and reversed on exit, so it never touches the
+// saved scenes, the stored config or the share URL.
+//
+// `phases` are applied stepwise at each boundary by the tick (audio); the
+// continuous visuals are interpolated from GANZFELD_VIS in the renderer. The
+// last phase holds indefinitely until you end the session.
+export const GANZFELD_PROGRAM = {
+  id: "ganzfeld", name: "Ganzfeld", total: 25,
+  blurb: "A featureless field that dissolves through a slow programme into a hypnagogic drift — the loops fall silent, leaving only the beat and a bed of noise.",
+  phases: [
+    // settle in: a still, warm field over pink noise; no beat yet
+    { at: 0,  name: "Acclimation", note: "a still warm field over soft noise",
+      audio: { loop: 0, binaural: "off",   binlevel: 0,    texture: ["pink"],  texlevel: 0.50 } },
+    // sensory deprivation: the field begins its slow hue drift; theta fades in
+    { at: 5,  name: "Deprivation", note: "slow colour drift, theta fades in",
+      audio: { loop: 0, binaural: "theta", binlevel: 0.50, texture: ["pink"],  texlevel: 0.45 } },
+    // induction: sub-threshold grain joins; nothing for the eye to hold
+    { at: 15, name: "Induction",   note: "a living shimmer, anchorless",
+      audio: { loop: 0, binaural: "theta", binlevel: 0.50, texture: ["pink"],  texlevel: 0.42 } },
+    // deep drive: brown-noise bed, and (if allowed) a moderated flicker
+    { at: 25, name: "Deep drive",  note: "brown noise — holds until you end it",
+      audio: { loop: 0, binaural: "theta", binlevel: 0.40, texture: ["brown"], texlevel: 0.50 } },
+  ],
+};
+
+// visual keyframes (by elapsed SECONDS): the renderer interpolates these
+// continuously so the field morphs without ever popping. Colours stay deep and
+// low-saturation — gentle for closed or half-closed eyes.
+export const GANZFELD_VIS = [
+  { at: 0,    light: 0.14, sat: 0.55, vig: 0.32, grain: 0 },
+  { at: 300,  light: 0.15, sat: 0.55, vig: 0.42, grain: 0 },
+  { at: 900,  light: 0.16, sat: 0.50, vig: 0.55, grain: 0.6 },
+  { at: 1500, light: 0.15, sat: 0.45, vig: 0.66, grain: 1 },
+];
+
+export const GANZFELD_BASE_HUE = 24;            // warm amber the field starts on
+export const GANZFELD_ACCLIM_SEC = 300;         // no hue drift during acclimation
+export const GANZFELD_DRIFT_DEG_PER_SEC = 1.0;  // ~6 min per full colour cycle after that
+export const GANZFELD_STROBE_AT_SEC = 1500;     // deep-phase flicker onset (=25 min)
+export const GANZFELD_STROBE_HZ = 10;           // within the safe slow band (< ENTRAIN_MAX_HZ)
+export const GANZFELD_STROBE_DEPTH = 0.16;      // bounded luminance swing — never a hard flash
+export const GANZFELD_GRAIN_MAX = 0.02;         // sub-threshold grain alpha cap
+
+// which phase index is live at this elapsed time (seconds) — drives the tick
+export function ganzfeldPhaseAt(elapsed) {
+  const ph = GANZFELD_PROGRAM.phases;
+  const min = Math.max(0, elapsed || 0) / 60;
+  let idx = 0;
+  for (let i = 0; i < ph.length; i++) if (min >= ph[i].at) idx = i;
+  return idx;
+}
+
+// the continuous visual state at this elapsed time (seconds) — pure, so the
+// renderer and the tests read exactly the same field.
+export function ganzfeldVisualAt(elapsed) {
+  const t = Math.max(0, elapsed || 0);
+  // hue drifts only after acclimation, then wanders the wheel forever
+  const hue = (GANZFELD_BASE_HUE + Math.max(0, t - GANZFELD_ACCLIM_SEC) * GANZFELD_DRIFT_DEG_PER_SEC) % 360;
+  const kf = GANZFELD_VIS;
+  let a = kf[0], b = kf[0], f = 0;
+  if (t >= kf[kf.length - 1].at) { a = b = kf[kf.length - 1]; }
+  else if (t > kf[0].at) {
+    for (let i = 0; i < kf.length - 1; i++) {
+      if (t >= kf[i].at && t < kf[i + 1].at) { a = kf[i]; b = kf[i + 1]; f = (t - a.at) / (b.at - a.at); break; }
+    }
+  }
+  const lin = (k) => a[k] + (b[k] - a[k]) * f;
+  // the (already bounded) flicker fades in over ~20s at onset for comfort
+  const strobe = Math.max(0, Math.min(1, (t - GANZFELD_STROBE_AT_SEC) / 20));
+  return { hue, light: lin("light"), sat: lin("sat"), vig: lin("vig"), grain: lin("grain"), strobe };
+}
+
+// the moderated deep-phase flicker: a shallow luminance oscillation, gated off
+// unless explicitly allowed and never under reduce-motion. Mirrors entrainLum.
+export function ganzfeldStrobeLum(allowed, t, reduceMotion) {
+  if (!allowed || reduceMotion) return 0;
+  return Math.sin(t * 2 * Math.PI * GANZFELD_STROBE_HZ) * GANZFELD_STROBE_DEPTH;
+}

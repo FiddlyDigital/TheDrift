@@ -3,6 +3,7 @@ import {
   SCENES, SCENE_BY_NAME, KEYS,
   JOURNEY_STEP_KEYS, JOURNEY_CONT_KEYS,
   DRIFT_POOL, SLEEP_FADE, WAKE_RISE, SESSION_DUCK,
+  GANZFELD_PROGRAM, ganzfeldPhaseAt,
 } from '../constants.js';
 import { easeInOut, lerp, driftSegMs, driftPick } from './util.js';
 
@@ -53,6 +54,9 @@ export function createCoreSlice(set, get, init) {
     // endless drift
     driftOn: false, driftNow: "", driftNext: "", driftProgress: 0,
     _driftActive: false, _driftFrom: null, _driftTo: null, _driftSegStart: 0, _driftSegDur: 0,
+    // ganzfeld mode (a featureless, phased field with an audio takeover)
+    ganzfeld: null, ganzfeldPhase: -1, ganzfeldElapsed: 0,
+    _ganzfeldStartMs: 0, _ganzfeldStartAudio: 0, _ganzfeldStrobe: false, _prevVizMode: "mandala",
 
     _play: startEngine,
     setElapsed: (v) => set({ elapsed: v }),
@@ -75,11 +79,13 @@ export function createCoreSlice(set, get, init) {
       set({ activeScene: null, activeSaved: null });
       get().cancelJourney();
       get().cancelDrift();
+      get().cancelGanzfeld();
     },
 
     applyScene: (sc) => {
       get().cancelJourney();
       get().cancelDrift();
+      get().cancelGanzfeld();
       set({ params: Object.assign({}, get().params, sc.p) });
       ENGINE.setParams(Object.assign({}, ENGINE.params, sc.p));
       set({ activeScene: sc.name, activeSaved: null });
@@ -88,6 +94,7 @@ export function createCoreSlice(set, get, init) {
     cycleScene: (dir) => {
       get().cancelJourney();
       get().cancelDrift();
+      get().cancelGanzfeld();
       let idx = SCENES.findIndex((s) => s.name === get().activeScene);
       idx = idx < 0 ? (dir > 0 ? 0 : SCENES.length - 1)
                     : (idx + dir + SCENES.length) % SCENES.length;
@@ -118,6 +125,7 @@ export function createCoreSlice(set, get, init) {
 
     setSleep: (min) => {
       if (!min) { ENGINE.cancelFade(); set({ sleepDur: 0, sleepEnd: 0, sleepRemain: 0, _sleepFading: false }); return; }
+      get().cancelGanzfeld();
       if (!ENGINE.playing) startEngine();
       ENGINE.cancelFade();
       set({ sleepDur: min, sleepEnd: Date.now() + min * 60000, _sleepFading: false });
@@ -134,6 +142,7 @@ export function createCoreSlice(set, get, init) {
         set({ _journeyEnd: 0, _journeyStep: -1, _journeyFading: false, journey: null, journeyRemain: 0, journeyStop: 0 });
       }
       set({ _driftActive: false, driftOn: false });
+      get().cancelGanzfeld();
       if (!ENGINE.playing) startEngine();
       ENGINE.silenceFade();
       set({ wakeIn: min, wakeAt: Date.now() + min * 60000, wakeRising: false, _waking: false });
@@ -155,6 +164,7 @@ export function createCoreSlice(set, get, init) {
 
     beginSession: (min) => {
       if (!min) return;
+      get().cancelGanzfeld();
       ENGINE.cancelFade(); set({ sleepDur: 0, sleepEnd: 0 });
       if (!ENGINE.playing) startEngine();
       else { ENGINE.setLoopLevel(ENGINE.params.looplevel); ENGINE.setTextureLevel(ENGINE.params.texlevel); }
@@ -175,6 +185,7 @@ export function createCoreSlice(set, get, init) {
     beginJourney: (j) => {
       if (!j) return;
       get().cancelDrift();
+      get().cancelGanzfeld();
       const stops = j.stops.map((n) => SCENE_BY_NAME[n]).filter(Boolean);
       if (stops.length < 2) return;
       ENGINE.cancelFade();
@@ -206,6 +217,7 @@ export function createCoreSlice(set, get, init) {
     },
 
     beginDrift: () => {
+      get().cancelGanzfeld();
       ENGINE.cancelFade();
       set({ sleepDur: 0, sleepEnd: 0, sessionEnd: 0, sessionRemain: 0, _sessionEnding: false });
       if (get()._journeyEnd) {
@@ -234,6 +246,64 @@ export function createCoreSlice(set, get, init) {
     cancelDrift: () => {
       if (!get()._driftActive) return;
       set({ _driftActive: false, driftOn: false, driftNow: "", driftNext: "", driftProgress: 0 });
+    },
+
+    // ---- ganzfeld: a featureless, phased field with an audio takeover --------
+    // All audio changes are engine-level only (the store params and share URL
+    // are left untouched), so exiting restores the listener's exact prior sound.
+    beginGanzfeld: (opts) => {
+      opts = opts || {};
+      // mutual exclusion: stop every other autonomous system first
+      get().cancelJourney({ silent: true });
+      get().cancelDrift();
+      ENGINE.cancelFade();
+      set({
+        sleepDur: 0, sleepEnd: 0, sleepRemain: 0, _sleepFading: false,
+        wakeIn: 0, wakeAt: 0, wakeRising: false, _waking: false,
+        sessionEnd: 0, sessionRemain: 0, _sessionEnding: false, _nextBell: 0,
+      });
+      if (!ENGINE.playing) startEngine();
+      set({
+        ganzfeld: GANZFELD_PROGRAM, ganzfeldPhase: -1, ganzfeldElapsed: 0,
+        _ganzfeldStartMs: Date.now(),
+        _ganzfeldStartAudio: ENGINE.ctx ? ENGINE.ctx.currentTime : 0,
+        _ganzfeldStrobe: !!opts.strobe,
+        _prevVizMode: get().vizMode === "ganzfeld" ? "mandala" : get().vizMode,
+        vizMode: "ganzfeld", immersive: true,
+      });
+      get().ganzfeldTick();   // apply the opening phase immediately
+    },
+
+    ganzfeldTick: () => {
+      const prog = get().ganzfeld;
+      if (!prog) return;
+      const elapsed = (Date.now() - get()._ganzfeldStartMs) / 1000;
+      set({ ganzfeldElapsed: elapsed });
+      const idx = ganzfeldPhaseAt(elapsed);
+      if (idx === get().ganzfeldPhase) return;
+      const a = prog.phases[idx].audio;
+      ENGINE.setLoopLevel(a.loop);
+      ENGINE.setBinaural(a.binaural);
+      ENGINE.setBinLevel(a.binlevel);
+      ENGINE.setTextures(a.texture);
+      ENGINE.setTextureLevel(a.texlevel);
+      set({ ganzfeldPhase: idx });
+    },
+
+    cancelGanzfeld: () => {
+      if (!get().ganzfeld) return;
+      // restore the audio to the listener's live settings (engine-level only)
+      const p = get().params;
+      ENGINE.setLoopLevel(p.looplevel == null ? 1 : p.looplevel);
+      ENGINE.setBinaural(p.binaural || "off");
+      ENGINE.setBinLevel(p.binlevel == null ? 0.4 : p.binlevel);
+      ENGINE.setTextures(p.texture ? p.texture.split(".").filter(Boolean) : []);
+      ENGINE.setTextureLevel(p.texlevel == null ? 0.36 : p.texlevel);
+      set({
+        ganzfeld: null, ganzfeldPhase: -1, ganzfeldElapsed: 0,
+        _ganzfeldStartMs: 0, _ganzfeldStartAudio: 0,
+        vizMode: get()._prevVizMode || "mandala",
+      });
     },
 
     onJourneyInfo: (info) => {

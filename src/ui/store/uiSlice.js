@@ -31,7 +31,7 @@ export function createUiSlice(set, get, init) {
     consoleOpen: false,                 // the slide-over Sound & tuning drawer
     coachDone: ls("loops.coach") === "1",
     coachVisible: false,                // one-time dock hint after Begin
-    vizMode: "mandala",                 // "mandala" | "space"
+    vizMode: "mandala",                 // "mandala" | "space" | "ganzfeld"
     vizUiVisible: true,
     sheet: null,
     isFullscreen: false,
@@ -49,6 +49,10 @@ export function createUiSlice(set, get, init) {
     entrainConsented: ls("loops.entrain.ok") === "1",    // photosensitivity consent
     entrainPrompt: false,
     entrainToast: false,
+    ganzfeldStrobe: ls("loops.ganzfeld.strobe") === "1",       // allow the deep-phase flicker (off by default)
+    ganzfeldStrobeConsented: ls("loops.ganzfeld.ok") === "1",  // its own photosensitivity consent
+    ganzfeldStrobePrompt: false,
+    ganzfeldToast: false,
     section: ls("loops.section") || "scenes",
     expert: ls("loops.expert") === "1",
     expertToast: false,
@@ -70,7 +74,13 @@ export function createUiSlice(set, get, init) {
       applyTheme(next);
       set({ theme: next });
     },
-    setVizMode: (v) => set({ vizMode: upd(v, get().vizMode) }),
+    // switching to the mandala/space view ends a running ganzfeld cleanly (which
+    // restores the audio), so the program can never outlive its featureless field
+    setVizMode: (v) => {
+      const next = upd(v, get().vizMode);
+      if (get().ganzfeld && next !== "ganzfeld") { get().cancelGanzfeld(); }
+      set({ vizMode: next });
+    },
     setVizUiVisible: (v) => set({ vizUiVisible: upd(v, get().vizUiVisible) }),
     setSheet: (v) => set({ sheet: upd(v, get().sheet) }),
     setIsFullscreen: (v) => set({ isFullscreen: upd(v, get().isFullscreen) }),
@@ -144,6 +154,29 @@ export function createUiSlice(set, get, init) {
       get()._enableEntrain();
     },
     dismissEntrainPrompt: () => set({ entrainPrompt: false }),
+
+    // the Ganzfeld deep-phase flicker is opt-in and, the first time, gated behind
+    // its own photosensitivity consent — mirrors the entrain-light flow.
+    toggleGanzfeldStrobe: () => {
+      if (get().ganzfeldStrobe) {
+        try { localStorage.setItem("loops.ganzfeld.strobe", "0"); } catch (e) {}
+        set({ ganzfeldStrobe: false });
+        return;
+      }
+      if (!get().ganzfeldStrobeConsented) { set({ ganzfeldStrobePrompt: true }); return; }
+      get()._enableGanzfeldStrobe();
+    },
+    _enableGanzfeldStrobe: () => {
+      try { localStorage.setItem("loops.ganzfeld.strobe", "1"); } catch (e) {}
+      set({ ganzfeldStrobe: true, ganzfeldToast: true });
+      setTimeout(() => set({ ganzfeldToast: false }), 4200);
+    },
+    confirmGanzfeldStrobe: () => {
+      try { localStorage.setItem("loops.ganzfeld.ok", "1"); } catch (e) {}
+      set({ ganzfeldStrobeConsented: true, ganzfeldStrobePrompt: false });
+      get()._enableGanzfeldStrobe();
+    },
+    dismissGanzfeldStrobe: () => set({ ganzfeldStrobePrompt: false }),
 
     toggleSpatial: () => {
       const next = !get().spatial;

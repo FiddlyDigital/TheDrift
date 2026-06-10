@@ -4,7 +4,7 @@ import { moodName, ensembleName } from '../format.js';
 
 // The canvases (2D mandala + WebGL 3D) and the field hint. The canvas refs are
 // owned by App (shared with the visualizer hook) and passed in.
-export function Field({ canvasRef, glCanvasRef }) {
+export function Field({ canvasRef, glCanvasRef, ganzfeldCanvasRef }) {
   const vizMode = useDriftStore((s) => s.vizMode);
   const immersive = useDriftStore((s) => s.immersive);
   const playing = useDriftStore((s) => s.playing);
@@ -15,6 +15,7 @@ export function Field({ canvasRef, glCanvasRef }) {
     <div className="field-wrap">
       <canvas className="field" ref={canvasRef}></canvas>
       <canvas className={"field field-gl" + (vizMode === "space" && immersive ? " show" : "")} ref={glCanvasRef}></canvas>
+      <canvas className={"field field-ganzfeld" + (vizMode === "ganzfeld" && immersive ? " show" : "")} ref={ganzfeldCanvasRef}></canvas>
       <div className="field-hint">{ensembleName(params)} &middot; {moodName(params)} &middot; {params.density} loops</div>
       {!playing && (
         <div className="idle-veil" onClick={toggle}>

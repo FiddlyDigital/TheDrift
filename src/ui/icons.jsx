@@ -117,6 +117,13 @@ export const SunriseIcon = () => (
     <path d="M12 4v3" /><path d="M5 8l1.5 1.5" /><path d="M19 8l-1.5 1.5" />
   </svg>
 );
+export const GanzfeldIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4">
+    <circle cx="12" cy="12" r="9" />
+    <circle cx="12" cy="12" r="5.4" opacity="0.55" />
+    <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none" opacity="0.5" />
+  </svg>
+);
 export const CloseIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
     <path d="M6 6l12 12M18 6L6 18" />

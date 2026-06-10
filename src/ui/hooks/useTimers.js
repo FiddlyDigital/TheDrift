@@ -10,6 +10,7 @@ export function useTimers() {
   const sessionEnd = useDriftStore((s) => s.sessionEnd);
   const journey = useDriftStore((s) => s.journey);
   const driftOn = useDriftStore((s) => s.driftOn);
+  const ganzfeld = useDriftStore((s) => s.ganzfeld);
 
   // sleep timer
   useEffect(() => {
@@ -55,4 +56,13 @@ export function useTimers() {
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [driftOn]);
+
+  // ganzfeld program
+  useEffect(() => {
+    if (!ganzfeld) return;
+    const tick = useDriftStore.getState().ganzfeldTick;
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [ganzfeld]);
 }

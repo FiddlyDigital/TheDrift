@@ -12,6 +12,7 @@ export function ToastHost() {
   const spatialToast = useDriftStore((s) => s.spatialToast);
   const playAlongToast = useDriftStore((s) => s.playAlongToast);
   const entrainToast = useDriftStore((s) => s.entrainToast);
+  const ganzfeldToast = useDriftStore((s) => s.ganzfeldToast);
 
   const toasts = [
     savedToast && "Kept in your library",
@@ -20,6 +21,7 @@ export function ToastHost() {
     spatialToast && "Spatial audio on — best with headphones",
     playAlongToast && "Play along — tap height for pitch, hold for a glitch",
     entrainToast && "Entrain light on — gentle by design; skip it if flicker bothers you",
+    ganzfeldToast && "Moderated flicker enabled — bounded, and off under reduce-motion",
   ].filter(Boolean);
 
   if (!toasts.length) return null;
