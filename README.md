@@ -197,9 +197,3 @@ PRODUCT.md              # full product/feature description
 - **System font stack** — no bundled or web-served fonts
 - **Vitest** + **@testing-library/preact** — unit tests
 - **GitHub Actions** — CI/CD (test → build → deploy to GitHub Pages)
-
----
-
-## License
-
-MIT
